@@ -24,6 +24,16 @@ docker run --net=host \
   docker.meltwater.com/proxymatic:latest
 ```
 
+or through puppet
+
+```
+basic::docker::instance:
+  'proxymatic':
+    image: 'docker.meltwater.com/proxymatic:latest'
+    env:
+      - "MARATHON_URL=http://marathon-host:8080"
+```
+
 Given the service below proxymatic will listen on port 1234 and forward connections to port 8080 
 inside the container. 
 
