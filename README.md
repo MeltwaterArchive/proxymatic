@@ -30,6 +30,7 @@ or through puppet
 basic::docker::instance:
   'proxymatic':
     image: 'docker.meltwater.com/proxymatic:latest'
+    net: 'host'
     env:
       - "MARATHON_URL=http://marathon-host:8080"
 ```
