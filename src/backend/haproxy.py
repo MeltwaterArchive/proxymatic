@@ -1,5 +1,6 @@
 import logging, subprocess
 from mako.template import Template
+from proxymatic.util import *
 
 class HAProxyBackend(object):
     def __init__(self, reload, cfgtemplate, target):
