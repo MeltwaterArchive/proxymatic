@@ -4,8 +4,8 @@ from proxymatic.services import Server, Service
 from proxymatic.util import *
 
 class RegistratorEtcdDiscovery(object):
-    def __init__(self, config, url):
-        self._config = config
+    def __init__(self, backend, url):
+        self._backend = backend
         self._url = urlparse(url)
         self.priority = 5
         
@@ -17,7 +17,7 @@ class RegistratorEtcdDiscovery(object):
             response = urllib2.urlopen(geturl)
             waitIndex = int(response.info().getheader('X-Etcd-Index')) + 1
             services = self._parse(response.read())
-            self._config.update(self, services)
+            self._backend.update(self, services)
             logging.info("Refreshed services from registrator store %s", self._url.geturl())
             
             # Long poll for updates
@@ -26,7 +26,7 @@ class RegistratorEtcdDiscovery(object):
         
         # Run action() in thread with retry on error
         run(action, "etcd error from '" + self._url.geturl() + "': %s")
-        
+        Hahaha
     def _parse(self, content):
         services = {}
         state = json.loads(content)
@@ -49,7 +49,7 @@ class RegistratorEtcdDiscovery(object):
                     if key not in services:
                         name = node['key'].split('/')[-1]
                         services[key] = Service(name, 'registrator:%s' % self._url.geturl(), port, protocol)
-                    services[key].add(server)
+                    services[key] = services[key].addServer(server)
                 except Exception, e:
                     logging.warn("Failed to parse service %s backend %s/%s: %s", node['key'], backend['key'], backend['value'], str(e))
                     logging.debug(traceback.format_exc())

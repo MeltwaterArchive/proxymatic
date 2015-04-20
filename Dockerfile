@@ -14,7 +14,7 @@ ENV PYTHONPATH /usr/lib/python
 
 COPY haproxy.cfg.tpl /etc/haproxy/haproxy.cfg.tpl
 COPY pen.cfg.tpl /etc/pen/pen.cfg.tpl
-COPY src/main/python/proxymatic /usr/lib/python/proxymatic
+COPY src /usr/lib/python/proxymatic
 COPY proxymatic.sh /
 
 ENTRYPOINT ["/proxymatic.sh"]

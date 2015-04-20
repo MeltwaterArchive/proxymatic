@@ -6,8 +6,8 @@ from proxymatic.services import Server, Service
 from proxymatic.util import *
 
 class MarathonDiscovery(object):
-    def __init__(self, config, url, callback, interval):
-        self._config = config
+    def __init__(self, backend, url, callback, interval):
+        self._backend = backend
         self._url = url
         self._callback = callback
         self._interval = interval
@@ -47,18 +47,20 @@ class MarathonDiscovery(object):
         request = urllib2.Request(url, None, {'Accept': 'text/plain'})
         response = urllib2.urlopen(request)
         services = self._parse(response.read())
-        self._config.update(self, services)
+        self._backend.update(self, services)
         logging.info("Refreshed services from Marathon at %s", self._url)
         
     def _parse(self, content):
         services = {}
-    
+
+        logging.debug(content)
+
         # Marathon returns one line per service port like
         #  <service-id> [<service-port>] [<task-ip>:<task-port>)]...
         for line in content.split("\n"):
             # Split on tabs and filter empty parts
-            parts = [str(part) for part in line.split("\t") if part]
-            
+            parts = [str(part) for part in line.split("\t") if len(part) > 0]
+
             # Some service may not have service port and/or active tasks
             if len(parts) < 3 or not parts[1].isdigit():
                 continue
@@ -82,7 +84,7 @@ class MarathonDiscovery(object):
                     # Append backend to service
                     if key not in services:
                         services[key] = Service(parts[0], 'marathon:%s' % self._url, port, protocol)
-                    services[key].add(server)
+                    services[key]._add(server)
                 except Exception, e:
                     logging.warn("Failed parse service %s backend %s: %s", parts[0], backend, str(e))
                     logging.debug(traceback.format_exc())

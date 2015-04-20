@@ -3,25 +3,30 @@ import logging, threading
 class AggregateBackend(object):
     def __init__(self, exposehost, ignoreports):
         self._exposehost = exposehost
-        self._configs = []
+        self._backends = []
         self._sources = {}
         self._lock = threading.RLock()
         self._prev = {}
         self._ignoreports = ignoreports
     
-    def add(self, config):
-        self._configs.append(config)
-        
+    def add(self, backend):
+        self._backends.append(backend)
     def update(self, source, services):
+        """
+        @param source Discovery source that originated this update, e.g. Marathon or etcd
+        @param services Services found by the discovery source
+        """
         with self._lock:
             # Merged updated services into existing ones to keep server backends being reordered
             prev = self._sources.get(source, {})
             next = {}
+            logging.debug("Existing services: %s", services.items())
             for key, service in services.items():
                 if key in prev:
-                    next[key] = prev[key]
-                    next[key].update(service)
+                    logging.debug("Updating service: " + key)
+                    next[key] = prev[key].update(service)
                 else:
+                    logging.debug("Found new service: key: %s, service: %s", key, service)
                     next[key] = service
             self._sources[source] = next
             
@@ -31,7 +36,7 @@ class AggregateBackend(object):
                 for key, service in chunk.items():
                     if self._accepts(service):
                         merged[key] = service
-            
+
             # Reconfigure proxy implementations
             if self._prev != merged:
                 # Log changes to services and server backends
@@ -46,7 +51,7 @@ class AggregateBackend(object):
                 
                 # Apply config changes
                 remaining = dict(merged)
-                for config in self._configs:
+                for config in self._backends:
                     accepted = config.update(self, remaining)
                     for key in accepted.keys():
                         del remaining[key]
