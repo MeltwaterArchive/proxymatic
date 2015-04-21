@@ -7,7 +7,7 @@ is scaled or fails over.
 
 ## Configuration Flags
 ```
-docker run docker.meltwater.com/proxymatic:latest --help
+docker run meltwater/proxymatic:latest --help
 ```
 
 ## Marathon
@@ -21,7 +21,7 @@ be notified immediatly, which cuts the response time in case of failover or scal
 docker run --net=host \
   -e MARATHON_URL=http://marathon-host:8080 \
   -e MARATHON_CALLBACK_URL=http://$(hostname --fqdn):5090 \
-  docker.meltwater.com/proxymatic:latest
+  meltwater/proxymatic:latest
 ```
 
 or through puppet
@@ -29,7 +29,7 @@ or through puppet
 ```
 basic::docker::instance:
   'proxymatic':
-    image: 'docker.meltwater.com/proxymatic:latest'
+    image: 'meltwater/proxymatic:latest'
     net: 'host'
     env:
       - "MARATHON_URL=http://marathon-host:8080"
