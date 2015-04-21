@@ -1,4 +1,5 @@
 # Proxymatic
+
 The proxymatic image forms one part of a network level service discovery solution. It dynamically configures
 proxies that forward network connections to the host where a service is currently running. By subscribing to
 events from discovery sources such as [Marathon](https://github.com/mesosphere/marathon) or
@@ -6,11 +7,13 @@ events from discovery sources such as [Marathon](https://github.com/mesosphere/m
 is scaled or fails over.
 
 ## Configuration Flags
+
 ```
 docker run meltwater/proxymatic:latest --help
 ```
 
 ## Marathon
+
 Given a Marathon URL proxymatic will periodically fetch the running tasks and configure proxies that
 forward connections from the [servicePort](http://mesosphere.com/docs/getting-started/service-discovery/)
 to the host and port exposed by the task. If Marathon is started with 
@@ -24,10 +27,15 @@ docker run --net=host \
   meltwater/proxymatic:latest
 ```
 
-or through puppet
+### Puppet Hiera
+
+Using the [garethr-docker](https://github.com/garethr/garethr-docker) module
 
 ```
-basic::docker::instance:
+classes:
+  - docker::run_instance
+
+docker::run_instance:
   'proxymatic':
     image: 'meltwater/proxymatic:latest'
     net: 'host'
