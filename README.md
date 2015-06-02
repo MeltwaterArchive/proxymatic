@@ -6,6 +6,15 @@ events from discovery sources such as [Marathon](https://github.com/mesosphere/m
 [registrator](https://github.com/gliderlabs/registrator) the proxies can quickly be updated whenever a service
 is scaled or fails over.
 
+## Environment Variables
+
+ * **REGISTRATOR_URL** - URL where registrator publishes services, e.g. "etcd://localhost:4001/services"
+ * **MARATHON_URL** - Marathon URL to query, e.g. "http://localhost:8080/"
+ * **MARATHON_CALLBACK_URL** - URL to listen for Marathon HTTP callbacks, e.g. "http://localhost:5090/"
+ * **REFRESH_INTERVAL=60** - Polling interval when using non-event capable backends. Defaults to 60 seconds.
+ * **EXPOSE_HOST=false** - Expose services running in net=host mode. May cause port collisions when this container is also run in net=host mode. Defaults to false.
+ * **HAPROXY=false** - Use HAproxy for TCP services. Defaults to false.
+
 ## Command Line Usage
 
 ```
@@ -68,22 +77,6 @@ docker run --net=host \
   meltwater/proxymatic:latest
 ```
 
-### Puppet Hiera
-
-Using the [garethr-docker](https://github.com/garethr/garethr-docker) module
-
-```
-classes:
-  - docker::run_instance
-
-docker::run_instance:
-  'proxymatic':
-    image: 'meltwater/proxymatic:latest'
-    net: 'host'
-    env:
-      - "MARATHON_URL=http://marathon-host:8080"
-```
-
 Given the service below proxymatic will listen on port 1234 and forward connections to port 8080 
 inside the container. 
 
@@ -102,4 +95,64 @@ inside the container.
 	},
 	"instances": 2
 }
+```
+
+## Deployment
+
+### Systemd and CoreOS/Fleet
+
+Create a [Systemd unit](http://www.freedesktop.org/software/systemd/man/systemd.unit.html) file 
+in **/etc/systemd/system/proxymatic.service** with contents like below. Using CoreOS and
+[Fleet](https://coreos.com/docs/launching-containers/launching/fleet-unit-files/) then
+add the X-Fleet section to schedule the unit on all cluster nodes.
+
+```
+[Unit]
+Description=Proxymatic dynamic service gateway
+After=docker.service
+Requires=docker.service
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Environment=IMAGE=meltwater/proxymatic:latest NAME=proxymatic
+
+# Allow docker pull to take some time
+TimeoutStartSec=600
+
+# Restart on failures
+KillMode=none
+Restart=always
+RestartSec=15
+
+ExecStartPre=-/usr/bin/docker kill $NAME
+ExecStartPre=-/usr/bin/docker rm $NAME
+ExecStartPre=-/bin/sh -c 'if ! docker images | tr -s " " : | grep "^${IMAGE}:"; then docker pull "${IMAGE}"; fi'
+ExecStart=/usr/bin/docker run --net=host \
+    -e MARATHON_URL=http://marathon-host:8080 \
+    -e MARATHON_CALLBACK_URL=http://%H:5090 \
+    $IMAGE
+
+ExecStop=/usr/bin/docker stop $NAME
+
+[X-Fleet]
+Global=true
+```
+
+### Puppet Hiera
+
+Using the [garethr-docker](https://github.com/garethr/garethr-docker) module
+
+```
+classes:
+  - docker::run_instance
+
+docker::run_instance:
+  'proxymatic':
+    image: 'meltwater/proxymatic:latest'
+    net: 'host'
+    env:
+      - "MARATHON_URL=http://marathon-host:8080"
+      - "MARATHON_CALLBACK_URL=http://%{::hostname}:5090"
 ```
