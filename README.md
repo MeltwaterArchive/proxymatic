@@ -30,7 +30,7 @@ Options:
   -m MARATHON, --marathon=MARATHON
                         Marathon URL to query, e.g. "http://localhost:8080/"
   -c CALLBACK, --marathon-callback=CALLBACK
-                        URL to listen for Marathon HTTP callbacks
+                        URL to listen for Marathon HTTP callbacks, e.g. "http://localhost:5090/"
   -v, --verbose         Increase verbosity
   -i INTERVAL, --refresh-interval=INTERVAL
                         Polling interval when using non-event capable backends
@@ -47,7 +47,7 @@ Options:
   --pen-clients=PENCLIENTS
                         Max number of pen client connections [default: 8192]
   --pen-user=PENUSER    User to run pen proxy as [default: pen]
-  --haproxy             Use HAproxy for TCP services [default: False]
+  --haproxy             Use HAproxy for TCP services instead of running everything through Pen [default: False]
   --haproxy-start=HAPROXYSTART
                         Command to start HAproxy [default: /etc/init.d/haproxy
                         start]

@@ -36,7 +36,7 @@ parser.add_option('-r', '--registrator', dest='registrator', help='URL where reg
         
 parser.add_option('-m', '--marathon', dest='marathon', help='Marathon URL to query, e.g. "http://localhost:8080/"',
     default=os.environ.get('MARATHON_URL', None))
-parser.add_option('-c', '--marathon-callback', dest='callback', help='URL to listen for Marathon HTTP callbacks',
+parser.add_option('-c', '--marathon-callback', dest='callback', help='URL to listen for Marathon HTTP callbacks, e.g. "http://localhost:5090/"',
     default=os.environ.get('MARATHON_CALLBACK_URL', None))
     
 parser.add_option('-v', '--verbose', dest='verbose', help='Increase verbosity',
@@ -55,7 +55,7 @@ parser.add_option('--pen-clients', dest='penclients', help='Max number of pen cl
 parser.add_option('--pen-user', dest='penuser', help='User to run pen proxy as [default: %default]',
     default=os.environ.get('PEN_USER', None))
     
-parser.add_option('--haproxy', dest='haproxy', help='Use HAproxy for TCP services [default: %default]',
+parser.add_option('--haproxy', dest='haproxy', help='Use HAproxy for TCP services instead of running everything through Pen [default: %default]',
     action="store_true", default=parsebool(os.environ.get('HAPROXY', False)))
 parser.add_option('--haproxy-start', dest='haproxystart', help='Command to start HAproxy [default: %default]',
     default=os.environ.get('HAPROXY_START', '/etc/init.d/haproxy start'))
