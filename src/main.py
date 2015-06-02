@@ -9,7 +9,7 @@ from proxymatic.backend.haproxy import HAProxyBackend
 from proxymatic.backend.pen import PenBackend
 
 parser = optparse.OptionParser(
-    usage='%prog [options] services...',
+    usage='docker run meltwater/proxymatic:latest [options]...',
     description='Proxy for TCP/UDP services registered in Marathon and etcd')
 
 def parsebool(value):

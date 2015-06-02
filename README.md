@@ -6,10 +6,51 @@ events from discovery sources such as [Marathon](https://github.com/mesosphere/m
 [registrator](https://github.com/gliderlabs/registrator) the proxies can quickly be updated whenever a service
 is scaled or fails over.
 
-## Configuration Flags
+## Command Line Usage
 
 ```
-docker run meltwater/proxymatic:latest --help
+Usage: docker run meltwater/proxymatic:latest [options]...
+
+Proxy for TCP/UDP services registered in Marathon and etcd
+
+Options:
+  -h, --help            show this help message and exit
+  -r REGISTRATOR, --registrator=REGISTRATOR
+                        URL where registrator publishes services, e.g.
+                        "etcd://localhost:4001/services"
+  -m MARATHON, --marathon=MARATHON
+                        Marathon URL to query, e.g. "http://localhost:8080/"
+  -c CALLBACK, --marathon-callback=CALLBACK
+                        URL to listen for Marathon HTTP callbacks
+  -v, --verbose         Increase verbosity
+  -i INTERVAL, --refresh-interval=INTERVAL
+                        Polling interval when using non-event capable backends
+                        [default: 60]
+  -e, --expose-host     Expose services running in net=host mode. May cause
+                        port collisions when this container is also run in
+                        net=host mode [default: False]
+  --pen-template=PENTEMPLATE
+                        Template pen proxy config file [default:
+                        /etc/pen/pen.cfg.tpl]
+  --pen-servers=PENSERVERS
+                        Max number of backend servers for each pen service
+                        [default: 32]
+  --pen-clients=PENCLIENTS
+                        Max number of pen client connections [default: 8192]
+  --pen-user=PENUSER    User to run pen proxy as [default: pen]
+  --haproxy             Use HAproxy for TCP services [default: False]
+  --haproxy-start=HAPROXYSTART
+                        Command to start HAproxy [default: /etc/init.d/haproxy
+                        start]
+  --haproxy-reload=HAPROXYRELOAD
+                        Command to reload HAproxy [default:
+                        /etc/init.d/haproxy reload]
+  --haproxy-config=HAPROXYCONFIG
+                        HAproxy config file to write [default:
+                        /etc/haproxy/haproxy.cfg]
+  --haproxy-template=HAPROXYTEMPLATE
+                        Template HAproxy config file [default:
+                        /etc/haproxy/haproxy.cfg.tpl]
 ```
 
 ## Marathon
