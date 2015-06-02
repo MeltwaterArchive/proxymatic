@@ -13,7 +13,7 @@ is scaled or fails over.
  * **MARATHON_CALLBACK_URL** - URL to listen for Marathon HTTP callbacks, e.g. "http://localhost:5090/"
  * **REFRESH_INTERVAL=60** - Polling interval when using non-event capable backends. Defaults to 60 seconds.
  * **EXPOSE_HOST=false** - Expose services running in net=host mode. May cause port collisions when this container is also run in net=host mode. Defaults to false.
- * **HAPROXY=false** - Use HAproxy for TCP services. Defaults to false.
+ * **HAPROXY=false** - Use HAproxy for TCP services instead of running everything through Pen. Defaults to false.
 
 ## Command Line Usage
 
