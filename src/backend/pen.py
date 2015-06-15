@@ -42,7 +42,8 @@ class PenBackend(object):
         pidfile = '/tmp/%s.pid' % filename
         ctlfile = '/tmp/%s.ctl' % filename
         cmd = [
-            'pen', 'pen', 
+            'pen', 'pen',
+            '-r',  # This starts the server with round-robin
             '-u', self._user,
             '-c', str(self._maxclients), 
             '-S', str(self._maxservers), 
