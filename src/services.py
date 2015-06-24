@@ -1,4 +1,5 @@
 import re
+from random import randint
 
 class Server(object):
     def __init__(self, ip, port):
@@ -86,8 +87,8 @@ class Service(object):
                 self.slots[i] = server
                 return
         
-        # No free slots, just append to end of list
-        self.slots.append(server)
+        # Not present in list, just insert randomly
+        self.slots.insert(randint(0, len(self.slots)), server)
         
     def _remove(self, server):
         self.servers.remove(server)
@@ -95,7 +96,7 @@ class Service(object):
         # Set the server slot to None
         for i in range(len(self.slots)):
             if self.slots[i] == server:
-                self.slots[i] = None
+                del self.slots[i]
                 return
         
         raise KeyError(str(server))

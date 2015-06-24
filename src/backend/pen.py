@@ -43,7 +43,8 @@ class PenBackend(object):
         ctlfile = '/tmp/%s.ctl' % filename
         cmd = [
             'pen', 'pen',
-            '-r',  # This starts the server with round-robin
+            '-r', # Disable sticky sessions
+            '-W', # Use weight/least-connected balancing mode
             '-u', self._user,
             '-c', str(self._maxclients), 
             '-S', str(self._maxservers), 
