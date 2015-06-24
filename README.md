@@ -14,6 +14,7 @@ is scaled or fails over.
  * **REFRESH_INTERVAL=60** - Polling interval when using non-event capable backends. Defaults to 60 seconds.
  * **EXPOSE_HOST=false** - Expose services running in net=host mode. May cause port collisions when this container is also run in net=host mode. Defaults to false.
  * **HAPROXY=false** - Use HAproxy for TCP services instead of running everything through Pen. Defaults to false.
+ * **VHOST_DOMAIN** - Configure nginx on port 80 with virtual hosts for each service under this domain.
 
 ## Command Line Usage
 
@@ -38,28 +39,12 @@ Options:
   -e, --expose-host     Expose services running in net=host mode. May cause
                         port collisions when this container is also run in
                         net=host mode [default: False]
-  --pen-template=PENTEMPLATE
-                        Template pen proxy config file [default:
-                        /etc/pen/pen.cfg.tpl]
   --pen-servers=PENSERVERS
                         Max number of backend servers for each pen service
                         [default: 32]
   --pen-clients=PENCLIENTS
                         Max number of pen client connections [default: 8192]
-  --pen-user=PENUSER    User to run pen proxy as [default: pen]
   --haproxy             Use HAproxy for TCP services instead of running everything through Pen [default: False]
-  --haproxy-start=HAPROXYSTART
-                        Command to start HAproxy [default: /etc/init.d/haproxy
-                        start]
-  --haproxy-reload=HAPROXYRELOAD
-                        Command to reload HAproxy [default:
-                        /etc/init.d/haproxy reload]
-  --haproxy-config=HAPROXYCONFIG
-                        HAproxy config file to write [default:
-                        /etc/haproxy/haproxy.cfg]
-  --haproxy-template=HAPROXYTEMPLATE
-                        Template HAproxy config file [default:
-                        /etc/haproxy/haproxy.cfg.tpl]
 ```
 
 ## Marathon
@@ -96,6 +81,25 @@ inside the container.
 	"instances": 2
 }
 ```
+
+## Virtual Hosts
+
+The --vhost-domain and $VHOST_DOMAIN parameter can be used to automatically configure an nginx with 
+virtual hosts for each service. This is similar to the [Deis router](http://docs.deis.io/en/latest/understanding_deis/components/#router) component. 
+To use this feature start proxymatic like
+
+```
+docker run -p 80:80 -e VHOST_DOMAIN=app.example.com
+```
+
+And create a wildcard DNS record that points *.app.example.com to the IP of the 
+container host. Each service will automatically get a vhost under the app.example.com 
+setup in nginx. For example
+
+| URL | Marathon Id | $SERVICE_NAME |
+|:----|:------------|:--------------| 
+| http://myservice.app.example.com | myservice | myservice |
+| http://product-system-service.app.example.com | /product/system/service | product-system-service |
 
 ## Deployment
 

@@ -3,11 +3,6 @@ from mako.template import Template
 from proxymatic.util import *
 
 class HAProxyBackend(object):
-    def __init__(self, reload, cfgtemplate, target):
-        self._reload = reload
-        self._cfgtemplate = cfgtemplate
-        self._target = target
-        
     def update(self, source, services):
         # HAproxy only supports TCP
         accepted = {}
@@ -16,11 +11,11 @@ class HAProxyBackend(object):
                 accepted[key] = service
         
         # Expand the config template
-        template = Template(filename=self._cfgtemplate)
-        config = template.render(services=accepted, mangle=mangle)
-        with open(self._target, 'w') as f:
+        template = Template(filename='/etc/haproxy/haproxy.cfg.tpl')
+        config = template.render(services=accepted)
+        with open('/etc/haproxy/haproxy.cfg', 'w') as f:
             f.write(config)
         
         # Instruct HAproxy to reload the config
-        subprocess.call(self._reload, shell=True)
+        subprocess.call('haproxy -f /etc/haproxy/haproxy.cfg -p /run/haproxy.pid -sf $(cat /run/haproxy.pid)', shell=True)
         return accepted

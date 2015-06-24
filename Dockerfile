@@ -1,18 +1,28 @@
-FROM centos:6
+FROM centos:7
 
 # Install Epel YUM repo
-RUN rpm -i "https://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm"
+RUN yum -y install epel-release && \
+	yum clean all
 
 # Install HAproxy/Pen TCP/UDP proxies, Mako for config templates
-RUN yum -y install haproxy pen python-mako && yum clean all
+# Note that httpd package fails to install because of
+#  - https://major.io/2014/03/26/docker-trusted-builds-and-fedora-20/
+RUN yum -y install haproxy pen python-mako; \
+	yum clean all
 
 # Run Pen proxy as user "pen"
 RUN groupadd pen && useradd -g pen pen
 ENV PEN_USER pen
 
+# Install Nginx
+RUN rpm -i "http://nginx.org/packages/rhel/7/noarch/RPMS/nginx-release-rhel-7-0.el7.ngx.noarch.rpm"
+RUN yum -y install nginx && \
+	yum clean all
+
 ENV PYTHONPATH /usr/lib/python
 
 COPY haproxy.cfg.tpl /etc/haproxy/haproxy.cfg.tpl
+COPY nginx.tpl /etc/nginx/conf.d/default.conf.tpl
 COPY pen.cfg.tpl /etc/pen/pen.cfg.tpl
 COPY src /usr/lib/python/proxymatic
 COPY proxymatic.sh /
