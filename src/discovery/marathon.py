@@ -83,7 +83,8 @@ class MarathonDiscovery(object):
                     
                     # Append backend to service
                     if key not in services:
-                        services[key] = Service(parts[0], 'marathon:%s' % self._url, port, protocol)
+                        name = parts[0].replace('_', '-')
+                        services[key] = Service(name, 'marathon:%s' % self._url, port, protocol)
                     services[key]._add(server)
                 except Exception, e:
                     logging.warn("Failed parse service %s backend %s: %s", parts[0], backend, str(e))

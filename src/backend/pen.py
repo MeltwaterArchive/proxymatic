@@ -3,11 +3,9 @@ from mako.template import Template
 from proxymatic.util import *
 
 class PenBackend(object):
-    def __init__(self, cfgtemplate, maxservers, maxclients, user):
-        self._cfgtemplate = cfgtemplate
+    def __init__(self, maxservers, maxclients):
         self._maxservers = maxservers
         self._maxclients = maxclients
-        self._user = user
         self._state = {}
         
     def update(self, source, services):
@@ -45,7 +43,7 @@ class PenBackend(object):
             'pen', 'pen',
             '-r', # Disable sticky sessions
             '-W', # Use weight/least-connected balancing mode
-            '-u', self._user,
+            '-u', 'pen',
             '-c', str(self._maxclients), 
             '-S', str(self._maxservers), 
             '-F', cfgfile, 
@@ -61,8 +59,8 @@ class PenBackend(object):
             'servers': set(service.servers)}
         
         # Write the configuration file
-        template = Template(filename=self._cfgtemplate)
-        config = template.render(service=service, maxservers=self._maxservers, mangle=mangle)
+        template = Template(filename='/etc/pen/pen.cfg.tpl')
+        config = template.render(service=service, maxservers=self._maxservers)
         with open(cfgfile, 'w') as f:
             f.write(config)
 
