@@ -96,10 +96,10 @@ And create a wildcard DNS record that points *.app.example.com to the IP of the
 container host. Each service will automatically get a vhost under the app.example.com 
 setup in nginx. For example
 
-| URL | Marathon Id | $SERVICE_NAME |
-|:----|:------------|:--------------| 
-| http://myservice.app.example.com | myservice | myservice |
-| http://product-system-service.app.example.com | /product/system/service | product-system-service |
+| URL | Marathon Id |
+|:----|:------------|
+| http://myservice.app.example.com | myservice |
+| http://service.system.product.app.example.com | /product/system/service |
 
 ## Deployment
 

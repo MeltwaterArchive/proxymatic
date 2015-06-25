@@ -83,7 +83,7 @@ class MarathonDiscovery(object):
                     
                     # Append backend to service
                     if key not in services:
-                        name = parts[0].replace('_', '-')
+                        name = '.'.join(reversed(parts[0].split('_')))
                         services[key] = Service(name, 'marathon:%s' % self._url, port, protocol)
                     services[key]._add(server)
                 except Exception, e:
