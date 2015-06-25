@@ -40,9 +40,16 @@ proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 proxy_set_header X-Forwarded-Proto $proxy_x_forwarded_proto;
 
 server {
-	listen 80;
+	listen 80 default_server;
 	server_name _; # This is just an invalid value which will never trigger on a real hostname.
-	return 503;
+
+	location / {
+		return 503;
+	}
+
+	location /_status {
+		return 200;
+	}
 }
 
 % for service in services.values():
