@@ -134,6 +134,7 @@ ExecStartPre=-/usr/bin/docker kill $NAME
 ExecStartPre=-/usr/bin/docker rm $NAME
 ExecStartPre=-/bin/sh -c 'if ! docker images | tr -s " " : | grep "^${IMAGE}:"; then docker pull "${IMAGE}"; fi'
 ExecStart=/usr/bin/docker run --net=host \
+    --name=${NAME} \
     -e MARATHON_URL=http://marathon-host:8080 \
     -e MARATHON_CALLBACK_URL=http://%H:5090 \
     $IMAGE
