@@ -29,6 +29,10 @@ RUN sed -i 's/worker_processes .*/worker_processes auto\;/g' /etc/nginx/nginx.co
 RUN sed -i 's/access_log .*/access_log \/proc\/self\/fd\/1 main\;/g' /etc/nginx/nginx.conf
 RUN sed -i 's/error_log .*/error_log \/proc\/self\/fd\/2\;/g' /etc/nginx/nginx.conf
 
+# The Timeout value must be greater than the front facing load balancers timeout value.
+# Default is the deis recommended timeout value for ELB - 1200 seconds + 100s extra.
+RUN sed -i 's/keepalive_timeout .*/keepalive_timeout 1300;/g' /etc/nginx/nginx.conf
+
 ENV PYTHONPATH /usr/lib/python
 
 COPY haproxy.cfg.tpl /etc/haproxy/haproxy.cfg.tpl

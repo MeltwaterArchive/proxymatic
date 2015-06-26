@@ -1,10 +1,16 @@
 # Copied from https://github.com/jwilder/nginx-proxy and https://github.com/deis/deis/blob/master/router/image/templates/nginx.conf
 
-server_names_hash_bucket_size 128;
-
 tcp_nopush on;
 tcp_nodelay on;
-gzip on;
+
+types_hash_max_size 2048;
+server_names_hash_max_size 512;
+server_names_hash_bucket_size 256;
+
+client_max_body_size "1m";
+
+set_real_ip_from 10.0.0.0/8;
+real_ip_header proxy_protocol;
 
 # If we receive X-Real-IP, pass it through; otherwise, pass along the
 # remote addr used to connect to this server
@@ -33,7 +39,14 @@ map $http_upgrade $proxy_connection {
   '' close;
 }
 
-gzip_types text/plain text/css application/javascript application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript;
+gzip on;
+gzip_comp_level 5;
+gzip_disable "msie6";
+gzip_http_version 1.1;
+gzip_min_length 256;
+gzip_types application/atom+xml application/javascript application/json application/rss+xml application/vnd.ms-fontobject application/x-font-ttf application/x-web-app-manifest+json application/xhtml+xml application/xml font/opentype image/svg+xml image/x-icon text/css text/plain text/x-component;
+gzip_proxied any;
+gzip_vary on;
 
 log_format vhost '$host $remote_addr - $remote_user [$time_local] '
                  '"$request" $status $body_bytes_sent '
@@ -52,27 +65,6 @@ proxy_set_header X-Real-IP $proxy_x_real_ip;
 proxy_set_header X-Forwarded-For $proxy_x_forwarded_for;
 proxy_set_header X-Forwarded-Proto $proxy_x_forwarded_proto;
 
-server {
-	listen 80 default_server;
-	server_name _; # This is just an invalid value which will never trigger on a real hostname.
-
-	location / {
-		return 503;
-	}
-
-	location /_status {
-		return 200;
-	}
-}
-
-# Circumvent bug with HTTP 400 for first proxy_protocol vhost
-# http://trac.nginx.org/nginx/ticket/650
-server {
-	listen 80 proxy_protocol;
-	server_name 691a9f001c0711e59a211697f925ec7b; # This is just an uuid which will never trigger on a real hostname.
-	return 503;
-}
-
 % for service in services.values():
 # ${service.name} (${service.source})
 upstream ${service.name}.${domain} {
@@ -82,6 +74,9 @@ upstream ${service.name}.${domain} {
 }
 
 server {
+	server_name_in_redirect off;
+	port_in_redirect off;
+	
 	listen 80 proxy_protocol;
 	server_name ${service.name}.${domain};
 
@@ -92,3 +87,9 @@ server {
 
 
 % endfor
+
+server {
+	listen 80 default_server proxy_protocol;
+	server_name _; # This is just an invalid value which will never trigger on a real hostname.
+	return 503;
+}
