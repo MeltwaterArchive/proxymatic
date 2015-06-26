@@ -5,9 +5,13 @@ from proxymatic.util import *
 class NginxBackend(object):
     def __init__(self, domain):
         self._domain = domain
+        self._cfgfile = '/etc/nginx/conf.d/default.conf'
+        
+        # Render an empty default config without any vhosts since nginx won't start 
+        # listening on port 80 unless the config is present at startup.
+        self._render({})
     
     def update(self, source, services):
-        cfgfile = '/etc/nginx/conf.d/default.conf'
         seen = set()
             
         # Nginx only supports HTTP
@@ -17,14 +21,18 @@ class NginxBackend(object):
                 accepted[key] = service
                 seen.add(service.name)
         
-        # Expand the config template
-        template = Template(filename='/etc/nginx/conf.d/default.conf.tpl')
-        config = template.render(services=accepted, domain=self._domain)
-        with open(cfgfile, 'w') as f:
-            f.write(config)
+        self._render(accepted)
         
         # Instruct Nginx to reload the config
-        logging.debug("Reloaded the Nginx config '%s'", cfgfile)
+        logging.debug("Reloaded the Nginx config '%s'", self._cfgfile)
         subprocess.call('nginx -s reload', shell=True)
         #return accepted
         return {}
+
+    def _render(self, accepted):
+        # Expand the config template
+        template = Template(filename='/etc/nginx/conf.d/default.conf.tpl')
+        config = template.render(services=accepted, domain=self._domain)
+        with open(self._cfgfile, 'w') as f:
+            f.write(config)
+        

@@ -19,6 +19,16 @@ RUN rpm -i "http://nginx.org/packages/rhel/7/noarch/RPMS/nginx-release-rhel-7-0.
 RUN yum -y install nginx && \
 	yum clean all
 
+# Clear the default config file
+RUN echo "" > /etc/nginx/conf.d/default.conf
+
+# Have Nginx determine number of worker processes automatically (using CPU count)
+RUN sed -i 's/worker_processes .*/worker_processes auto\;/g' /etc/nginx/nginx.conf
+
+# Delete log statements in favor of the ones from the template file
+RUN sed -i 's/access_log .*/access_log \/proc\/self\/fd\/1 main\;/g' /etc/nginx/nginx.conf
+RUN sed -i 's/error_log .*/error_log \/proc\/self\/fd\/2\;/g' /etc/nginx/nginx.conf
+
 ENV PYTHONPATH /usr/lib/python
 
 COPY haproxy.cfg.tpl /etc/haproxy/haproxy.cfg.tpl
