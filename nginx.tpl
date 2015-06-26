@@ -9,8 +9,9 @@ server_names_hash_bucket_size 256;
 
 client_max_body_size "1m";
 
-set_real_ip_from 10.0.0.0/8;
+% if proxyprotocol:
 real_ip_header proxy_protocol;
+% endif
 
 # If we receive X-Real-IP, pass it through; otherwise, pass along the
 # remote addr used to connect to this server
@@ -77,7 +78,7 @@ server {
 	server_name_in_redirect off;
 	port_in_redirect off;
 	
-	listen 80 proxy_protocol;
+	listen 80 ${'proxy_protocol' if proxyprotocol else ''};
 	server_name ${service.name}.${domain};
 
 	location / {
@@ -89,7 +90,7 @@ server {
 % endfor
 
 server {
-	listen 80 default_server proxy_protocol;
+	listen 80 default_server ${'proxy_protocol' if proxyprotocol else ''};
 	server_name _; # This is just an invalid value which will never trigger on a real hostname.
 	return 503;
 }

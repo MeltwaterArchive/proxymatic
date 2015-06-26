@@ -15,6 +15,7 @@ is scaled or fails over.
  * **EXPOSE_HOST=false** - Expose services running in net=host mode. May cause port collisions when this container is also run in net=host mode. Defaults to false.
  * **HAPROXY=false** - Use HAproxy for TCP services instead of running everything through Pen. Defaults to false.
  * **VHOST_DOMAIN** - Configure nginx on port 80 with virtual hosts for each service under this domain.
+ * **PROXY_PROTOCOL=false** - Enable proxy protocol on the nginx vhost which is needed when using the AWS ELB in TCP mode for websocket support.
 
 ## Command Line Usage
 
@@ -31,7 +32,8 @@ Options:
   -m MARATHON, --marathon=MARATHON
                         Marathon URL to query, e.g. "http://localhost:8080/"
   -c CALLBACK, --marathon-callback=CALLBACK
-                        URL to listen for Marathon HTTP callbacks, e.g. "http://localhost:5090/"
+                        URL to listen for Marathon HTTP callbacks, e.g.
+                        "http://localhost:5090/"
   -v, --verbose         Increase verbosity
   -i INTERVAL, --refresh-interval=INTERVAL
                         Polling interval when using non-event capable backends
@@ -44,7 +46,12 @@ Options:
                         [default: 32]
   --pen-clients=PENCLIENTS
                         Max number of pen client connections [default: 8192]
-  --haproxy             Use HAproxy for TCP services instead of running everything through Pen [default: False]
+  --haproxy             Use HAproxy for TCP services instead of running
+                        everything through Pen [default: False]
+  --vhost-domain=VHOSTDOMAIN
+                        Domain to vhost services under [default: none]
+  --proxy-protocol      Enable proxy protocol on the nginx vhost [default:
+                        False]
 ```
 
 ## Marathon

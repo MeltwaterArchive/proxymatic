@@ -57,6 +57,8 @@ parser.add_option('--haproxy', dest='haproxy', help='Use HAproxy for TCP service
 
 parser.add_option('--vhost-domain', dest='vhostdomain', help='Domain to vhost services under [default: %default]',
     default=os.environ.get('VHOST_DOMAIN', None))
+parser.add_option('--proxy-protocol', dest='proxyprotocol', help='Enable proxy protocol on the nginx vhost [default: %default]',
+    action="store_true", default=parsebool(os.environ.get('PROXY_PROTOCOL', False)))
 
 (options, args) = parser.parse_args()
 
@@ -78,7 +80,7 @@ backend = AggregateBackend(options.exposehost, set([callbackport]))
 
 if options.vhostdomain:
     subprocess.call('nginx', shell=True)
-    backend.add(NginxBackend(options.vhostdomain))
+    backend.add(NginxBackend(options.vhostdomain, options.proxyprotocol))
 
 if options.haproxy:
     subprocess.call('haproxy -f /etc/haproxy/haproxy.cfg -p /run/haproxy.pid', shell=True)
