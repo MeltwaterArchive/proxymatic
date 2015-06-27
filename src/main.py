@@ -32,19 +32,17 @@ def parseint(value):
         logging.error("Invalid integer value '%s'", value)
         sys.exit(1)
 
-parser.add_option('-r', '--registrator', dest='registrator', help='URL where registrator publishes services, e.g. "etcd://localhost:4001/services"',
+parser.add_option('-r', '--registrator', dest='registrator', help='URL where registrator publishes services, e.g. "etcd://etcd-host:4001/services"',
     default=os.environ.get('REGISTRATOR_URL', None))
         
-parser.add_option('-m', '--marathon', dest='marathon', help='Marathon URL to query, e.g. "http://localhost:8080/"',
+parser.add_option('-m', '--marathon', dest='marathon', help='Marathon URL to query, e.g. "http://marathon-host:8080/"',
     default=os.environ.get('MARATHON_URL', None))
-parser.add_option('-c', '--marathon-callback', dest='callback', help='URL to listen for Marathon HTTP callbacks, e.g. "http://localhost:5090/"',
+parser.add_option('-c', '--marathon-callback', dest='callback', help='URL to listen for Marathon HTTP callbacks, e.g. "http://`hostname -f`:5090/"',
     default=os.environ.get('MARATHON_CALLBACK_URL', None))
     
-parser.add_option('-v', '--verbose', dest='verbose', help='Increase verbosity',
-    action="store_true", default=parsebool(os.environ.get('VERBOSE', False)))
-parser.add_option('-i', '--refresh-interval', dest='interval', help='Polling interval when using non-event capable backends [default: %default]',
+parser.add_option('-i', '--refresh-interval', dest='interval', help='Polling interval in seconds when using non-event capable backends [default: %default]',
     type="int", default=parseint(os.environ.get('REFRESH_INTERVAL', '60')))
-parser.add_option('-e', '--expose-host', dest='exposehost', help='Expose services running in net=host mode. May cause port collisions when this container is also run in net=host mode [default: %default]',
+parser.add_option('-e', '--expose-host', dest='exposehost', help='Expose services running in net=host mode. May cause port collisions when this container is also run in net=host mode on the same machine [default: %default]',
     action="store_true", default=parsebool(os.environ.get('EXPOSE_HOST', False)))
 
 parser.add_option('--pen-servers', dest='penservers', help='Max number of backend servers for each pen service [default: %default]',
@@ -55,10 +53,13 @@ parser.add_option('--pen-clients', dest='penclients', help='Max number of pen cl
 parser.add_option('--haproxy', dest='haproxy', help='Use HAproxy for TCP services instead of running everything through Pen [default: %default]',
     action="store_true", default=parsebool(os.environ.get('HAPROXY', False)))
 
-parser.add_option('--vhost-domain', dest='vhostdomain', help='Domain to vhost services under [default: %default]',
+parser.add_option('--vhost-domain', dest='vhostdomain', help='Domain to add service virtual host under, e.g. "app.example.com"',
     default=os.environ.get('VHOST_DOMAIN', None))
 parser.add_option('--proxy-protocol', dest='proxyprotocol', help='Enable proxy protocol on the nginx vhost [default: %default]',
     action="store_true", default=parsebool(os.environ.get('PROXY_PROTOCOL', False)))
+
+parser.add_option('-v', '--verbose', dest='verbose', help='Increase logging verbosity',
+    action="store_true", default=parsebool(os.environ.get('VERBOSE', False)))
 
 (options, args) = parser.parse_args()
 

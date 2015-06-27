@@ -27,20 +27,20 @@ Proxy for TCP/UDP services registered in Marathon and etcd
 Options:
   -h, --help            show this help message and exit
   -r REGISTRATOR, --registrator=REGISTRATOR
-                        URL where registrator publishes services, e.g.
-                        "etcd://localhost:4001/services"
+                        URL where registrator publishes services, e.g. "etcd
+                        ://etcd-host:4001/services"
   -m MARATHON, --marathon=MARATHON
-                        Marathon URL to query, e.g. "http://localhost:8080/"
+                        Marathon URL to query, e.g. "http://marathon-
+                        host:8080/"
   -c CALLBACK, --marathon-callback=CALLBACK
                         URL to listen for Marathon HTTP callbacks, e.g.
-                        "http://localhost:5090/"
-  -v, --verbose         Increase verbosity
+                        "http://`hostname -f`:5090/"
   -i INTERVAL, --refresh-interval=INTERVAL
-                        Polling interval when using non-event capable backends
-                        [default: 60]
+                        Polling interval in seconds when using non-event
+                        capable backends [default: 60]
   -e, --expose-host     Expose services running in net=host mode. May cause
                         port collisions when this container is also run in
-                        net=host mode [default: False]
+                        net=host mode on the same machine [default: False]
   --pen-servers=PENSERVERS
                         Max number of backend servers for each pen service
                         [default: 32]
@@ -49,9 +49,11 @@ Options:
   --haproxy             Use HAproxy for TCP services instead of running
                         everything through Pen [default: False]
   --vhost-domain=VHOSTDOMAIN
-                        Domain to vhost services under [default: none]
+                        Domain to add service virtual host under, e.g.
+                        "app.example.com"
   --proxy-protocol      Enable proxy protocol on the nginx vhost [default:
                         False]
+  -v, --verbose         Increase logging verbosity
 ```
 
 ## Marathon
@@ -103,10 +105,10 @@ And create a wildcard DNS record that points *.app.example.com to the IP of the
 container host. Each service will automatically get a vhost under the app.example.com 
 setup in nginx. For example
 
-| URL | Marathon Id |
-|:----|:------------|
-| http://myservice.app.example.com | myservice |
-| http://service.system.product.app.example.com | /product/system/service |
+| Virtual Host URL   | Marathon Id | Registrator SERVICE_NAME |
+| :----------------- | :---------- | :----------------------- |
+| http://myservice.app.example.com | myservice | myservice |
+| http://service.system.product.app.example.com | /product/system/service | service.system.product |
 
 ## Deployment
 
