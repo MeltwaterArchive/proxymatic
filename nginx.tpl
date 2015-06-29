@@ -92,5 +92,13 @@ server {
 server {
 	listen 80 default_server ${'proxy_protocol' if proxyprotocol else ''};
 	server_name _; # This is just an invalid value which will never trigger on a real hostname.
-	return 503;
+
+    location / {        
+        return 503;     
+    }       
+    
+    location /_status {     
+        return 200;     
+    }
+
 }
