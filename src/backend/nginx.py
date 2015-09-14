@@ -3,7 +3,8 @@ from mako.template import Template
 from proxymatic.util import *
 
 class NginxBackend(object):
-    def __init__(self, domain, proxyprotocol):
+    def __init__(self, port, domain, proxyprotocol):
+        self._port = port
         self._domain = domain
         self._proxyprotocol = proxyprotocol
         self._cfgfile = '/etc/nginx/conf.d/default.conf'
@@ -11,7 +12,10 @@ class NginxBackend(object):
         # Render an empty default config without any vhosts since nginx won't start 
         # listening on port 80 unless the config is present at startup.
         self._render({})
-    
+
+        # Start the Nginx process
+        subprocess.call('nginx', shell=True)
+
     def update(self, source, services):
         seen = set()
             
@@ -33,7 +37,7 @@ class NginxBackend(object):
     def _render(self, accepted):
         # Expand the config template
         template = Template(filename='/etc/nginx/conf.d/default.conf.tpl')
-        config = template.render(services=accepted, domain=self._domain, proxyprotocol=self._proxyprotocol)
+        config = template.render(services=accepted, port=self._port, domain=self._domain, proxyprotocol=self._proxyprotocol)
         with open(self._cfgfile, 'w') as f:
             f.write(config)
         

@@ -53,8 +53,10 @@ parser.add_option('--pen-clients', dest='penclients', help='Max number of pen cl
 parser.add_option('--haproxy', dest='haproxy', help='Use HAproxy for TCP services instead of running everything through Pen [default: %default]',
     action="store_true", default=parsebool(os.environ.get('HAPROXY', False)))
 
-parser.add_option('--vhost-domain', dest='vhostdomain', help='Domain to add service virtual host under, e.g. "app.example.com"',
+parser.add_option('--vhost-domain', dest='vhostdomain', help='Domain to add service virtual host under, e.g. "services.example.com"',
     default=os.environ.get('VHOST_DOMAIN', None))
+parser.add_option('--vhost-port', dest='vhostport', help='Port to serve virtual hosts from [default: %default]"',
+    type="int", default=parseint(os.environ.get('VHOST_PORT', '80')))
 parser.add_option('--proxy-protocol', dest='proxyprotocol', help='Enable proxy protocol on the nginx vhost [default: %default]',
     action="store_true", default=parsebool(os.environ.get('PROXY_PROTOCOL', False)))
 
@@ -80,8 +82,7 @@ if options.callback:
 backend = AggregateBackend(options.exposehost, set([callbackport]))
 
 if options.vhostdomain:
-    subprocess.call('nginx', shell=True)
-    backend.add(NginxBackend(options.vhostdomain, options.proxyprotocol))
+    backend.add(NginxBackend(options.vhostport, options.vhostdomain, options.proxyprotocol))
 
 if options.haproxy:
     subprocess.call('haproxy -f /etc/haproxy/haproxy.cfg -p /run/haproxy.pid', shell=True)

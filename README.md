@@ -14,7 +14,8 @@ is scaled or fails over.
  * **REFRESH_INTERVAL=60** - Polling interval when using non-event capable backends. Defaults to 60 seconds.
  * **EXPOSE_HOST=false** - Expose services running in net=host mode. May cause port collisions when this container is also run in net=host mode. Defaults to false.
  * **HAPROXY=false** - Use HAproxy for TCP services instead of running everything through Pen. Defaults to false.
- * **VHOST_DOMAIN** - Configure nginx on port 80 with virtual hosts for each service under this domain.
+ * **VHOST_DOMAIN** - Enables nginx with virtual hosts for each service under this domain, e.g. "services.example.com"
+ * **VHOST_PORT** - Port to serve virtual hosts from. Defaults to port 80.
  * **PROXY_PROTOCOL=false** - Enable proxy protocol on the nginx vhost which is needed when using the AWS ELB in TCP mode for websocket support.
 
 ## Command Line Usage
@@ -50,7 +51,9 @@ Options:
                         everything through Pen [default: False]
   --vhost-domain=VHOSTDOMAIN
                         Domain to add service virtual host under, e.g.
-                        "app.example.com"
+                        "services.example.com"
+  --vhost-port=VHOSTPORT
+                        Port to serve virtual hosts from [default: 80]"
   --proxy-protocol      Enable proxy protocol on the nginx vhost [default:
                         False]
   -v, --verbose         Increase logging verbosity

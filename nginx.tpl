@@ -78,7 +78,7 @@ server {
 	server_name_in_redirect off;
 	port_in_redirect off;
 	
-	listen 80 ${'proxy_protocol' if proxyprotocol else ''};
+	listen ${port} ${'proxy_protocol' if proxyprotocol else ''};
 	server_name ${service.name}.${domain};
 
 	location / {
@@ -90,7 +90,7 @@ server {
 % endfor
 
 server {
-	listen 80 default_server ${'proxy_protocol' if proxyprotocol else ''};
+	listen ${port} default_server ${'proxy_protocol' if proxyprotocol else ''};
 	server_name _; # This is just an invalid value which will never trigger on a real hostname.
 
     location / {        
