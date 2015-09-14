@@ -15,7 +15,7 @@ is scaled or fails over.
  * **EXPOSE_HOST=false** - Expose services running in net=host mode. May cause port collisions when this container is also run in net=host mode. Defaults to false.
  * **HAPROXY=false** - Use HAproxy for TCP services instead of running everything through Pen. Defaults to false.
  * **VHOST_DOMAIN** - Enables nginx with virtual hosts for each service under this domain, e.g. "services.example.com"
- * **VHOST_PORT** - Port to serve virtual hosts from. Defaults to port 80.
+ * **VHOST_PORT=80** - Port to serve virtual hosts from. Defaults to port 80.
  * **PROXY_PROTOCOL=false** - Enable proxy protocol on the nginx vhost which is needed when using the AWS ELB in TCP mode for websocket support.
 
 ## Command Line Usage
