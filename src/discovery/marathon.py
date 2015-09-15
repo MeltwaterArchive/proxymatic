@@ -1,4 +1,4 @@
-import logging, socket, time, urllib2
+import logging, socket, time, urllib2, json
 from urllib import urlencode
 from urlparse import urlparse
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
@@ -44,50 +44,61 @@ class MarathonDiscovery(object):
     def _refresh(self):
         url = '%s/v2/tasks' % self._url
         logging.debug("GET Marathon services from %s", url)
-        request = urllib2.Request(url, None, {'Accept': 'text/plain'})
+        request = urllib2.Request(url, None, {'Accept': 'application/json'})
         response = urllib2.urlopen(request)
         services = self._parse(response.read())
         self._backend.update(self, services)
         logging.info("Refreshed services from Marathon at %s", self._url)
         
     def _parse(self, content):
-        services = {}
-
         logging.debug(content)
 
-        # Marathon returns one line per service port like
-        #  <service-id> [<service-port>] [<task-ip>:<task-port>)]...
-        for line in content.split("\n"):
-            # Split on tabs and filter empty parts
-            parts = [str(part) for part in line.split("\t") if len(part) > 0]
+        services = {}
+        document = json.loads(content)
 
-            # Some service may not have service port and/or active tasks
-            if len(parts) < 3 or not parts[1].isdigit():
-                continue
+        def failed(check):
+            alive = check.get('alive', False)
+            if not alive:
+                cause = check.get('lastFailureCause','')
+                if cause:
+                    logging.info("Task %s is failing health check with result '%s'", check.get('taskId',''), cause)
+                else:
+                    logging.debug("Skipping task %s which is not alive (yet)", check.get('taskId',''))
+            return not alive
 
-            # Marathon returns multiple entries for services that expose both TCP and UDP using the same 
-            # port number. There's no way to separate TCP and UDP service ports at the moment.
-            port = int(parts[1])
-            protocol = 'tcp'
-            key = '%s/%s' % (port, protocol.lower())
-            if key in services:
-                continue
-            
-            # Parse service backends
-            for backend in parts[2:]:
+        for task in document.get('tasks', []):
+            exposedPorts = task.get('ports', [])
+            servicePorts = task.get('servicePorts', [])
+            seenServicePorts = set()
+
+            for servicePort, portIndex in zip(servicePorts, range(len(servicePorts))):
+                protocol = 'tcp'
+                key = '%s/%s' % (servicePort, protocol.lower())
+
+                # Marathon returns multiple entries for services that expose both TCP and UDP using the same 
+                # port number. There's no way to separate TCP and UDP service ports at the moment.
+                if servicePort in seenServicePorts:
+                    continue
+                seenServicePorts.add(servicePort)
+
+                # Verify that all health checks pass
+                if any(failed(check) for check in task.get('healthCheckResults',[])):
+                    continue
+
                 try:
+                    exposedPort = exposedPorts[portIndex]
+
                     # Resolve hostnames since HAproxy wants IP addresses
-                    endpoint = backend.split(':')
-                    ipaddr = socket.gethostbyname(endpoint[0])
-                    server = Server(ipaddr, endpoint[1])
+                    ipaddr = socket.gethostbyname(task['host'])
+                    server = Server(ipaddr, exposedPort)
                     
                     # Append backend to service
                     if key not in services:
-                        name = '.'.join(reversed(parts[0].split('_')))
-                        services[key] = Service(name, 'marathon:%s' % self._url, port, protocol)
+                        name = '.'.join(reversed(filter(bool, task['appId'].split('/'))))
+                        services[key] = Service(name, 'marathon:%s' % self._url, servicePort, protocol)
                     services[key]._add(server)
                 except Exception, e:
-                    logging.warn("Failed parse service %s backend %s: %s", parts[0], backend, str(e))
+                    logging.warn("Failed parse service %s backend %s: %s", task.get('appId',''), task.get('id',''), str(e))
                     logging.debug(traceback.format_exc())
         
         return services
