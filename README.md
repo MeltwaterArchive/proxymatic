@@ -94,6 +94,59 @@ inside the container.
 }
 ```
 
+### Rolling Upgrades/Restarts
+
+There's a number of things that need to be in place for graceful rollings upgrades to be 
+orchestrated. Proxymatic will remove tasks that fail their health check immediately. This 
+can be used to implement rolling upgrades/restarts without any failing requests.
+
+* Adjust Mesos slave parameters to gracefully stop tasks. Default behaviour is to use *docker kill* 
+  which will just send a SIGKILL and terminate the task immediately. Settings the docker_stop_timeout
+  parameter however will ensure Mesos uses the *docker stop* command. Start the Mesos slave with e.g.
+
+```
+  --executor_shutdown_grace_period=60secs --docker_stop_timeout=50secs
+```
+
+* Add an Marathon app health check that is fast enough to complete without the stop timeout. For example
+
+```
+  "healthChecks": [
+    {
+      "protocol": "HTTP",
+      "path": "/health",
+      "portIndex": 0,
+      "gracePeriodSeconds": 15,
+      "intervalSeconds": 10,
+      "timeoutSeconds": 20,
+      "maxConsecutiveFailures": 3
+    }
+  ]
+```
+
+* Trap SIGTERM in your app and start failing the health check with e.g. *HTTP 503 Service Unavailable*. The
+  implementation of this will vary greatly between apps and languages. This example uses [Python Flask](http://flask.pocoo.org/)
+
+```
+import signal
+from flask import Flask
+
+app = Flask(__name__)
+healty = True
+
+# Start failing the health check when receiving SIGTERM
+def sigterm_handler(_signo, _stack_frame):
+  global healty
+  healty = False
+signal.signal(signal.SIGTERM, sigterm_handler)
+
+@app.route('/health')
+def health():
+  if healty:
+    return ''
+  return '', 503
+```
+
 ## Virtual Hosts
 
 The --vhost-domain and $VHOST_DOMAIN parameter can be used to automatically configure an nginx with 
