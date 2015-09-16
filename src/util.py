@@ -1,4 +1,4 @@
-import logging, os, re, signal, time, threading, traceback, urllib2
+import logging, os, re, signal, time, threading, traceback, urllib2, httplib, socket
 
 def post(url, data='{}'):
     request = urllib2.Request(url, data)
@@ -74,3 +74,22 @@ def run(action, errormsg="Connection error: %s"):
     thread = threading.Thread(target=routine)
     thread.daemon = True
     thread.start()
+
+class UnixHTTPConnection(httplib.HTTPConnection):
+    """
+    Subclass of Python library HTTPConnection that uses a unix-domain socket.
+    """
+    def __init__(self, path):
+        httplib.HTTPConnection.__init__(self, 'localhost')
+        self.path = path
+ 
+    def connect(self):
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        sock.connect(self.path)
+        self.sock = sock
+
+def unixrequest(method, socketpath, url, body=None, headers={}):
+    conn = UnixHTTPConnection(socketpath)
+    conn.request(method, url, body, headers)
+    resp = conn.getresponse()
+    return resp.read()

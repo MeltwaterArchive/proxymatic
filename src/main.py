@@ -32,11 +32,14 @@ def parseint(value):
         logging.error("Invalid integer value '%s'", value)
         sys.exit(1)
 
+def parselist(value):
+    return filter(bool, value.split(','))
+
 parser.add_option('-r', '--registrator', dest='registrator', help='URL where registrator publishes services, e.g. "etcd://etcd-host:4001/services"',
     default=os.environ.get('REGISTRATOR_URL', None))
         
-parser.add_option('-m', '--marathon', dest='marathon', help='Marathon URL to query, e.g. "http://marathon-host:8080/"',
-    default=os.environ.get('MARATHON_URL', None))
+parser.add_option('-m', '--marathon', dest='marathon', help='Marathon URL to query, e.g. "http://marathon-host:8080/". Can be used multiple times to add multiple Marathon replicas for HA purposes.',
+    action="append", default=parselist(os.environ.get('MARATHON_URL', '')))
 parser.add_option('-c', '--marathon-callback', dest='callback', help='URL to listen for Marathon HTTP callbacks, e.g. "http://`hostname -f`:5090/"',
     default=os.environ.get('MARATHON_CALLBACK_URL', None))
     
@@ -84,19 +87,23 @@ backend = AggregateBackend(options.exposehost, set([callbackport]))
 if options.vhostdomain:
     backend.add(NginxBackend(options.vhostport, options.vhostdomain, options.proxyprotocol))
 
+# Option indicates preferance of HAproxy for TCP services
 if options.haproxy:
-    subprocess.call('haproxy -f /etc/haproxy/haproxy.cfg -p /run/haproxy.pid', shell=True)
     backend.add(HAProxyBackend())
 
 # Pen is needed for UDP support so always add it
 backend.add(PenBackend(options.penservers, options.penclients))
+
+# Add the HAproxy backend to handle the Marathon unix socket
+if not options.haproxy:
+    backend.add(HAProxyBackend())
  
 if options.registrator:
     registrator = RegistratorEtcdDiscovery(backend, options.registrator)
     registrator.start()
 
 if options.marathon:
-    marathon = MarathonDiscovery(backend, str(options.marathon).rstrip('/'), options.callback, options.interval)
+    marathon = MarathonDiscovery(backend, options.marathon, options.callback, options.interval)
     marathon.start()
 
 # Loop forever and allow the threads to work. Setting the threads to daemon=False and returning 

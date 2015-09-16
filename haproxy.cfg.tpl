@@ -35,14 +35,18 @@ listen stats
 
 % for service in services.values():
 # ${service.name} (${service.source})
-listen service-${service.port}
+listen service-${service.portname}
+% if service.protocol == 'unix':
+  bind unix@${service.port}
+% else:
   bind 0.0.0.0:${service.port}
+% endif
   mode tcp
   #option tcplog
   balance leastconn
 % 	for server, i in zip(service.slots, range(len(service.slots))):
 %     if server:
-  server backend-${service.port}-${i} ${server.ip}:${server.port} check
+  server backend-${service.portname}-${i} ${server.ip}:${server.port} check
 %     endif
 % 	endfor  
 

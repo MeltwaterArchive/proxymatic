@@ -3,11 +3,14 @@ from mako.template import Template
 from proxymatic.util import *
 
 class HAProxyBackend(object):
+    def __init__(self):
+        subprocess.call('haproxy -f /etc/haproxy/haproxy.cfg -p /run/haproxy.pid', shell=True)
+
     def update(self, source, services):
         # HAproxy only supports TCP
         accepted = {}
         for key, service in services.items():
-            if service.protocol == 'tcp':
+            if service.protocol == 'tcp' or service.protocol == 'unix':
                 accepted[key] = service
         
         # Expand the config template

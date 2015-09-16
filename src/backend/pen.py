@@ -1,4 +1,4 @@
-import logging, os
+import os, logging
 from mako.template import Template
 from proxymatic.util import *
 
@@ -10,13 +10,16 @@ class PenBackend(object):
         
     def update(self, source, services):
         state = {}
+        accepted = {}
     
         # Create new proxy instances
-        for service in services.values():
-            key = (service.port, service.protocol)
-            prev = self._state.get(key, None)
-            next = self._ensure(service, prev)
-            state[key] = next
+        for key, service in services.items():
+            if service.protocol == 'tcp' or service.protocol == 'udp':
+                statekey = (service.port, service.protocol)
+                prev = self._state.get(statekey, None)
+                next = self._ensure(service, prev)
+                state[statekey] = next
+                accepted[key] = service
         
         # Kill any proxy instances that are no longer relevant
         for key, prev in self._state.items():
@@ -24,7 +27,7 @@ class PenBackend(object):
                 kill(prev['pidfile'])
 
         self._state = state
-        return services
+        return accepted
     
     def _ensure(self, service, prev):
         """
@@ -35,7 +38,7 @@ class PenBackend(object):
             return prev
 
         # Parameters for starting pen
-        filename = 'pen-%s-%s' % (service.port, service.protocol)
+        filename = 'pen-%s-%s' % (service.portname, service.protocol)
         cfgfile = '/tmp/%s.cfg' % filename
         pidfile = '/tmp/%s.pid' % filename
         ctlfile = '/tmp/%s.ctl' % filename

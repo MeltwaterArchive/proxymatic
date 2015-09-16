@@ -49,6 +49,10 @@ class Service(object):
     def __hash__(self):
         return hash((self.name, self.port, self.protocol, self.servers))
 
+    @property
+    def portname(self):
+        return re.sub('[^a-zA-Z0-9]', '_', str(self.port))
+
     def clone(self):
         clone = Service(self.name, self.source, self.port, self.protocol)
         clone.servers = set(self.servers)

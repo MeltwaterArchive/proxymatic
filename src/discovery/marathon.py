@@ -6,13 +6,14 @@ from proxymatic.services import Server, Service
 from proxymatic.util import *
 
 class MarathonDiscovery(object):
-    def __init__(self, backend, url, callback, interval):
+    def __init__(self, backend, urls, callback, interval):
         self._backend = backend
-        self._url = url
+        self._urls = [url.rstrip('/') for url in urls]
+        self._socketpath = '/tmp/marathon.sock'
         self._callback = callback
         self._interval = interval
         self.priority = 10
-        
+
     def start(self):
         marathon = self
         
@@ -20,35 +21,50 @@ class MarathonDiscovery(object):
             # Start a HTTP server that listens for callbacks from Marathon
             class CallbackHandler(BaseHTTPRequestHandler):
                 def do_POST(self):
-                    logging.info("Received HTTP callback from Marathon")
+                    logging.debug("Received HTTP callback from Marathon")
                     marathon._refresh()
             
             callbackurl = urlparse(marathon._callback)
             server = HTTPServer(('', callbackurl.port or 80), CallbackHandler)
             server.timeout = marathon._interval
-            run(server.serve_forever, "Error processing Marathon HTTP callback from '" + str(marathon._url) + "': %s")
+            run(server.serve_forever, "Error processing Marathon HTTP callback from '" + str(marathon._urls) + "': %s")
 
             def register():
                 # Subscribe to Marathon events
-                response = post('%s/v2/eventSubscriptions?%s' % (marathon._url, urlencode({'callbackUrl': marathon._callback}))).read()
-                logging.info("Registered Marathon HTTP callback with %s", marathon._url)
+                response = unixrequest('POST', self._socketpath, '/v2/eventSubscriptions?%s' % urlencode({'callbackUrl': marathon._callback}))
+                logging.debug("Registered Marathon HTTP callback with %s", marathon._urls)
                 time.sleep(marathon._interval)
-            run(register, "Error registering Marathon HTTP callback with '" + str(self._url) + "': %s")
+            run(register, "Error registering Marathon HTTP callback with '" + str(self._urls) + "': %s")
 
         # Run refresh() in thread with retry on error
         def refresh():
             marathon._refresh()
             time.sleep(marathon._interval)
-        run(refresh, "Marathon error from '" + str(self._url) + "/v2/tasks': %s")
+        run(refresh, "Marathon error from '" + str(self._urls) + "/v2/tasks': %s")
         
     def _refresh(self):
-        url = '%s/v2/tasks' % self._url
-        logging.debug("GET Marathon services from %s", url)
-        request = urllib2.Request(url, None, {'Accept': 'application/json'})
-        response = urllib2.urlopen(request)
-        services = self._parse(response.read())
-        self._backend.update(self, services)
-        logging.info("Refreshed services from Marathon at %s", self._url)
+        services = {}
+
+        # Start the local load balancer in front of Marathon
+        service = Service('marathon.local', 'marathon:%s' % self._urls, self._socketpath, 'unix')
+        services[self._socketpath] = service
+
+        for url in self._urls:
+            parsed = urlparse(url)
+
+            # Resolve hostnames since HAproxy wants IP addresses
+            ipaddr = socket.gethostbyname(parsed.hostname or '127.0.0.1')
+            server = Server(ipaddr, parsed.port or 80)
+            service._add(server)
+
+        # Poll Marathon for running tasks
+        try:
+            logging.debug("GET Marathon services from %s", self._socketpath)
+            response = unixrequest('GET', self._socketpath, '/v2/tasks', None, {'Accept': 'application/json'})
+            services.update(self._parse(response))
+        finally:
+            self._backend.update(self, services)
+        logging.debug("Refreshed services from Marathon at %s", self._urls)
         
     def _parse(self, content):
         logging.debug(content)
@@ -95,7 +111,7 @@ class MarathonDiscovery(object):
                     # Append backend to service
                     if key not in services:
                         name = '.'.join(reversed(filter(bool, task['appId'].split('/'))))
-                        services[key] = Service(name, 'marathon:%s' % self._url, servicePort, protocol)
+                        services[key] = Service(name, 'marathon:%s' % self._urls, servicePort, protocol)
                     services[key]._add(server)
                 except Exception, e:
                     logging.warn("Failed parse service %s backend %s: %s", task.get('appId',''), task.get('id',''), str(e))
