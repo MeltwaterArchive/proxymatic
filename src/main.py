@@ -34,15 +34,15 @@ def parseint(value):
 
 def parselist(value):
     return filter(bool, value.split(','))
-
-parser.add_option('-r', '--registrator', dest='registrator', help='URL where registrator publishes services, e.g. "etcd://etcd-host:4001/services"',
-    default=os.environ.get('REGISTRATOR_URL', None))
         
-parser.add_option('-m', '--marathon', dest='marathon', help='Marathon URL to query, e.g. "http://marathon-host:8080/". Can be used multiple times to add multiple Marathon replicas for HA purposes.',
-    action="append", default=parselist(os.environ.get('MARATHON_URL', '')))
+parser.add_option('-m', '--marathon', dest='marathon', help='List of Marathon replicas, e.g. "http://marathon-01:8080/,http://marathon-02:8080/"',
+    default=os.environ.get('MARATHON_URL', ''))
 parser.add_option('-c', '--marathon-callback', dest='callback', help='URL to listen for Marathon HTTP callbacks, e.g. "http://`hostname -f`:5090/"',
     default=os.environ.get('MARATHON_CALLBACK_URL', None))
     
+parser.add_option('-r', '--registrator', dest='registrator', help='URL where registrator publishes services, e.g. "etcd://etcd-host:4001/services"',
+    default=os.environ.get('REGISTRATOR_URL', None))
+
 parser.add_option('-i', '--refresh-interval', dest='interval', help='Polling interval in seconds when using non-event capable backends [default: %default]',
     type="int", default=parseint(os.environ.get('REFRESH_INTERVAL', '60')))
 parser.add_option('-e', '--expose-host', dest='exposehost', help='Expose services running in net=host mode. May cause port collisions when this container is also run in net=host mode on the same machine [default: %default]',
@@ -103,7 +103,7 @@ if options.registrator:
     registrator.start()
 
 if options.marathon:
-    marathon = MarathonDiscovery(backend, options.marathon, options.callback, options.interval)
+    marathon = MarathonDiscovery(backend, parselist(options.marathon), options.callback, options.interval)
     marathon.start()
 
 # Loop forever and allow the threads to work. Setting the threads to daemon=False and returning 

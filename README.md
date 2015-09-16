@@ -8,9 +8,9 @@ is scaled or fails over.
 
 ## Environment Variables
 
- * **REGISTRATOR_URL** - URL where registrator publishes services, e.g. "etcd://localhost:4001/services"
- * **MARATHON_URL** - Marathon URL to query, e.g. "http://localhost:8080/"
+ * **MARATHON_URL** - List of Marathon replicas, e.g. "http://marathon-01:8080/,http://marathon-02:8080/"
  * **MARATHON_CALLBACK_URL** - URL to listen for Marathon HTTP callbacks, e.g. "http://localhost:5090/"
+ * **REGISTRATOR_URL** - URL where registrator publishes services, e.g. "etcd://localhost:4001/services"
  * **REFRESH_INTERVAL=60** - Polling interval when using non-event capable backends. Defaults to 60 seconds.
  * **EXPOSE_HOST=false** - Expose services running in net=host mode. May cause port collisions when this container is also run in net=host mode. Defaults to false.
  * **HAPROXY=false** - Use HAproxy for TCP services instead of running everything through Pen. Defaults to false.
@@ -27,15 +27,15 @@ Proxy for TCP/UDP services registered in Marathon and etcd
 
 Options:
   -h, --help            show this help message and exit
-  -r REGISTRATOR, --registrator=REGISTRATOR
-                        URL where registrator publishes services, e.g. "etcd
-                        ://etcd-host:4001/services"
   -m MARATHON, --marathon=MARATHON
-                        Marathon URL to query, e.g. "http://marathon-
-                        host:8080/"
+                        List of Marathon replicas, e.g.
+                        "http://marathon-01:8080/,http://marathon-02:8080/"
   -c CALLBACK, --marathon-callback=CALLBACK
                         URL to listen for Marathon HTTP callbacks, e.g.
                         "http://`hostname -f`:5090/"
+  -r REGISTRATOR, --registrator=REGISTRATOR
+                        URL where registrator publishes services, e.g. "etcd
+                        ://etcd-host:4001/services"
   -i INTERVAL, --refresh-interval=INTERVAL
                         Polling interval in seconds when using non-event
                         capable backends [default: 60]
