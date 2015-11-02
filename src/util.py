@@ -75,6 +75,9 @@ def run(action, errormsg="Connection error: %s"):
     thread.daemon = True
     thread.start()
 
+def shell(cmd):
+    return subprocess.call(cmd, shell=True)
+
 class UnixHTTPConnection(httplib.HTTPConnection):
     """
     Subclass of Python library HTTPConnection that uses a unix-domain socket.

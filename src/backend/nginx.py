@@ -1,4 +1,4 @@
-import logging, subprocess
+import logging
 from mako.template import Template
 from proxymatic.util import *
 
@@ -14,7 +14,7 @@ class NginxBackend(object):
         self._render({})
 
         # Start the Nginx process
-        subprocess.call('nginx', shell=True)
+        shell('nginx')
 
     def update(self, source, services):
         seen = set()
@@ -30,7 +30,7 @@ class NginxBackend(object):
         
         # Instruct Nginx to reload the config
         logging.debug("Reloaded the Nginx config '%s'", self._cfgfile)
-        subprocess.call('nginx -s reload', shell=True)
+        shell('nginx -s reload')
         #return accepted
         return {}
 

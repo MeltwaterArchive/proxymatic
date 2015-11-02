@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python
 import os, sys, optparse, logging, time, subprocess
 from urlparse import urlparse
 from pprint import pprint

@@ -1,10 +1,10 @@
-import logging, subprocess
+import logging
 from mako.template import Template
 from proxymatic.util import *
 
 class HAProxyBackend(object):
     def __init__(self):
-        subprocess.call('haproxy -f /etc/haproxy/haproxy.cfg -p /run/haproxy.pid', shell=True)
+        shell('haproxy -f /etc/haproxy/haproxy.cfg -p /run/haproxy.pid')
 
     def update(self, source, services):
         # HAproxy only supports TCP
@@ -20,5 +20,5 @@ class HAProxyBackend(object):
             f.write(config)
         
         # Instruct HAproxy to reload the config
-        subprocess.call('haproxy -f /etc/haproxy/haproxy.cfg -p /run/haproxy.pid -sf $(cat /run/haproxy.pid)', shell=True)
+        shell('haproxy -f /etc/haproxy/haproxy.cfg -p /run/haproxy.pid -sf $(cat /run/haproxy.pid)')
         return accepted
