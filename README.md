@@ -1,5 +1,4 @@
 # Proxymatic
-
 The proxymatic image forms one part of a network level service discovery solution. It dynamically configures
 proxies that forward network connections to the host where a service is currently running. By subscribing to
 events from discovery sources such as [Marathon](https://github.com/mesosphere/marathon) or
@@ -9,7 +8,7 @@ is scaled or fails over.
 ## Environment Variables
 
  * **MARATHON_URL** - List of Marathon replicas, e.g. "http://marathon-01:8080/,http://marathon-02:8080/"
- * **MARATHON_CALLBACK_URL** - URL to register for Marathon HTTP callbacks, e.g. "http://`hostname -f`:5090/"
+ * **MARATHON_CALLBACK_URL** - URL to register for Marathon HTTP callbacks, e.g. "http://\`hostname -f\`:5090/"
  * **REGISTRATOR_URL** - URL where registrator publishes services, e.g. "etcd://localhost:4001/services"
  * **REFRESH_INTERVAL=60** - Polling interval when using non-event capable backends. Defaults to 60 seconds.
  * **EXPOSE_HOST=false** - Expose services running in net=host mode. May cause port collisions when this container is also run in net=host mode. Defaults to false.
@@ -79,18 +78,18 @@ inside the container.
 
 ```
 {
-	"id": "/myproduct/mysubsystem/myservice",
-	"container": {
-		"type": "DOCKER",
-		"docker": {
-			"image": "registry.example.com/myservice:1.0.0",
-			"network": "BRIDGE",
-			"portMappings": [
-				{ "containerPort": 8080, "servicePort": 1234 }
-			]
-		}
-	},
-	"instances": 2
+  "id": "/myproduct/mysubsystem/myservice",
+  "container": {
+    "type": "DOCKER",
+    "docker": {
+      "image": "registry.example.com/myservice:1.0.0",
+      "network": "BRIDGE",
+      "portMappings": [
+        { "containerPort": 8080, "servicePort": 1234 }
+      ]
+    }
+  },
+  "instances": 2
 }
 ```
 
@@ -100,15 +99,15 @@ There's a number of things that need to be in place for graceful rollings upgrad
 orchestrated. Proxymatic will remove tasks that fail their health check immediately. This 
 can be used to implement rolling upgrades/restarts without any failing requests.
 
-* Adjust Mesos slave parameters to gracefully stop tasks. Default behaviour is to use *docker kill* 
-  which will just send a SIGKILL and terminate the task immediately. Settings the docker_stop_timeout
-  parameter however will ensure Mesos uses the *docker stop* command. Start the Mesos slave with e.g.
+* Adjust Mesos slave parameters to gracefully stop tasks. Default behaviour is to use `docker kill`
+  which will just send a SIGKILL and terminate the task immediately. Settings the *--docker_stop_timeout*
+  will ensure Mesos slaves uses the `docker stop` command. Start the Mesos slave with e.g.
 
 ```
-  --executor_shutdown_grace_period=60secs --docker_stop_timeout=50secs
+  --executor_shutdown_grace_period=90secs --docker_stop_timeout=60secs
 ```
 
-* Add an Marathon app health check that is fast enough to complete without the stop timeout. For example
+* Add an Marathon app health check that is fast enough to run within the stop timeout, and with plenty room to finish requests. For example
 
 ```
   "healthChecks": [
@@ -116,9 +115,9 @@ can be used to implement rolling upgrades/restarts without any failing requests.
       "protocol": "HTTP",
       "path": "/health",
       "portIndex": 0,
-      "gracePeriodSeconds": 15,
-      "intervalSeconds": 10,
-      "timeoutSeconds": 20,
+      "gracePeriodSeconds": 60,
+      "intervalSeconds": 20,
+      "timeoutSeconds": 10,
       "maxConsecutiveFailures": 3
     }
   ]
@@ -143,8 +142,8 @@ signal.signal(signal.SIGTERM, sigterm_handler)
 @app.route('/health')
 def health():
   if healty:
-    return ''
-  return '', 503
+    return 'OK'
+  return 'Stopping', 503
 ```
 
 ## Virtual Hosts
