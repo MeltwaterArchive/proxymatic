@@ -20,21 +20,18 @@ class NginxBackend(object):
         shell('nginx')
 
     def update(self, source, services):
-        seen = {}
+        accepted = {}
             
         # Nginx only supports HTTP
-        accepted = {}
         for key, service in services.items():
-            if service.protocol == 'tcp' and (service.name not in seen or precedence(service, seen[service.name])):
-                accepted[key] = service
-                seen[service.name] = service
+            if service.protocol == 'tcp' and (service.name not in accepted or precedence(service, accepted[service.name])):
+                accepted[service.name] = service
         
         self._render(accepted)
         
         # Instruct Nginx to reload the config
         logging.debug("Reloaded the Nginx config '%s'", self._cfgfile)
         shell('nginx -s reload')
-        #return accepted
         return {}
 
     def _render(self, accepted):
