@@ -2,6 +2,9 @@ import logging
 from mako.template import Template
 from proxymatic.util import *
 
+def precedence(service, prev):
+    return service.port < prev.port
+
 class NginxBackend(object):
     def __init__(self, port, domain, proxyprotocol):
         self._port = port
@@ -17,14 +20,14 @@ class NginxBackend(object):
         shell('nginx')
 
     def update(self, source, services):
-        seen = set()
+        seen = {}
             
         # Nginx only supports HTTP
         accepted = {}
         for key, service in services.items():
-            if service.protocol == 'tcp' and service.name not in seen:
+            if service.protocol == 'tcp' and (service.name not in seen or precedence(service, seen[service.name])):
                 accepted[key] = service
-                seen.add(service.name)
+                seen[service.name] = service
         
         self._render(accepted)
         
