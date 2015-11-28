@@ -1,9 +1,5 @@
 # Proxymatic
-The proxymatic image forms one part of a network level service discovery solution. It dynamically configures
-proxies that forward network connections to the host where a service is currently running. By subscribing to
-events from discovery sources such as [Marathon](https://github.com/mesosphere/marathon) or
-[registrator](https://github.com/gliderlabs/registrator) the proxies can quickly be updated whenever a service
-is scaled or fails over.
+The proxymatic image forms one part of a network level service discovery solution. It dynamically configures proxies that forward network connections to the host where a service is currently running. By subscribing to events from discovery sources such as [Marathon](https://github.com/mesosphere/marathon) or [registrator](https://github.com/gliderlabs/registrator) the proxies can quickly be updated whenever a service is scaled or fails over.
 
 ## Environment Variables
 
@@ -60,11 +56,7 @@ Options:
 
 ## Marathon
 
-Given a Marathon URL proxymatic will periodically fetch the running tasks and configure proxies that
-forward connections from the [servicePort](http://mesosphere.com/docs/getting-started/service-discovery/)
-to the host and port exposed by the task. If Marathon is started with 
-[HTTP callback support](https://mesosphere.github.io/marathon/docs/event-bus.html) then proxymatic can
-be notified immediatly, which cuts the response time in case of failover or scaling.
+Given a Marathon URL, proxymatic will periodically fetch the running tasks and configure proxies that forward connections from the [servicePort](http://mesosphere.com/docs/getting-started/service-discovery/) to the host and port exposed by the task. If Marathon is started with [HTTP callback support](https://mesosphere.github.io/marathon/docs/event-bus.html) then proxymatic can be notified immediately, which cuts the response time in case of failover or scaling.
 
 ```
 docker run --net=host \
@@ -73,8 +65,7 @@ docker run --net=host \
   meltwater/proxymatic:latest
 ```
 
-Given the service below proxymatic will listen on port 1234 and forward connections to port 8080 
-inside the container. 
+Given the service below, proxymatic will listen on port 1234 and forward connections to port 8080 inside the container. 
 
 ```
 {
@@ -95,13 +86,9 @@ inside the container.
 
 ### Rolling Upgrades/Restarts
 
-There's a number of things that need to be in place for graceful rollings upgrades to be 
-orchestrated. Proxymatic will remove tasks that fail their health check immediately. This 
-can be used to implement rolling upgrades/restarts without any failing requests.
+There are a number of things that need to be in place for the orchestration of graceful rolling upgrades. Proxymatic will remove tasks that fail their health check immediately. This can be used to implement rolling upgrades/restarts without any failing requests.
 
-* Adjust Mesos slave parameters to gracefully stop tasks. Default behaviour is to use `docker kill`
-  which will just send a SIGKILL and terminate the task immediately. Settings the *--docker_stop_timeout*
-  will ensure Mesos slaves uses the `docker stop` command. Start the Mesos slave with e.g.
+* Adjust Mesos slave parameters to gracefully stop tasks. Default behavior is to use `docker kill` which will just send a SIGKILL and terminate the task immediately. Setting the *--docker_stop_timeout* flag will ensure Mesos slaves uses the `docker stop` command. Start the Mesos slave with e.g.
 
 ```
   --executor_shutdown_grace_period=90secs --docker_stop_timeout=60secs
@@ -123,8 +110,7 @@ can be used to implement rolling upgrades/restarts without any failing requests.
   ]
 ```
 
-* Trap SIGTERM in your app and start failing the health check with e.g. *HTTP 503 Service Unavailable*. The
-  implementation of this will vary greatly between apps and languages. This example uses [Python Flask](http://flask.pocoo.org/)
+* Trap SIGTERM in your app and start failing the health check with e.g. *HTTP 503 Service Unavailable*. The  implementation of this will vary greatly between apps and languages. This example uses [Python Flask](http://flask.pocoo.org/)
 
 ```
 import signal
@@ -148,17 +134,14 @@ def health():
 
 ## Virtual Hosts
 
-The --vhost-domain and $VHOST_DOMAIN parameter can be used to automatically configure an nginx with 
-virtual hosts for each service. This is similar to the [Deis router](http://docs.deis.io/en/latest/understanding_deis/components/#router) component. 
-To use this feature start proxymatic like
+The --vhost-domain and $VHOST_DOMAIN parameter can be used to automatically configure an nginx with virtual hosts for each service. This is similar to the [Deis router](http://docs.deis.io/en/latest/understanding_deis/components/#router) component. To use this feature start proxymatic like
 
 ```
 docker run -p 80:80 -e VHOST_DOMAIN=app.example.com
 ```
 
 And create a wildcard DNS record that points *.app.example.com to the IP of the 
-container host. Each service will automatically get a vhost under the app.example.com 
-setup in nginx. For example
+container host. Each service will automatically get a vhost under the app.example.com setup in nginx. For example
 
 | Virtual Host URL   | Marathon Id | Registrator SERVICE_NAME |
 | :----------------- | :---------- | :----------------------- |
@@ -169,10 +152,7 @@ setup in nginx. For example
 
 ### Systemd and CoreOS/Fleet
 
-Create a [Systemd unit](http://www.freedesktop.org/software/systemd/man/systemd.unit.html) file 
-in **/etc/systemd/system/proxymatic.service** with contents like below. Using CoreOS and
-[Fleet](https://coreos.com/docs/launching-containers/launching/fleet-unit-files/) then
-add the X-Fleet section to schedule the unit on all cluster nodes.
+Create a [Systemd unit](http://www.freedesktop.org/software/systemd/man/systemd.unit.html) file in **/etc/systemd/system/proxymatic.service** with contents like below. Using CoreOS and [Fleet](https://coreos.com/docs/launching-containers/launching/fleet-unit-files/) then add the X-Fleet section to schedule the unit on all cluster nodes.
 
 ```
 [Unit]
