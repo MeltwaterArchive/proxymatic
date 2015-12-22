@@ -1,5 +1,6 @@
 # HAproxy configuration
 #  - http://www.haproxy.org/download/1.5/doc/configuration.txt
+#  - https://ymichael.com/2015/06/06/some-notes-playing-with-haproxy.html
 global
   daemon
   
@@ -8,14 +9,14 @@ global
   #log 127.0.0.1 local1 notice
   
   # Max total number of connections
-  maxconn          4096
+  maxconn          ${maxconnections}
 
 defaults
   #log            global
   retries             3
   
   # Default per service max number of connections
-  maxconn          2000
+  maxconn          ${maxconnections}
 
   # Timeout to establish a connection to the backend server
   timeout connect    5s
@@ -25,6 +26,9 @@ defaults
   
   # TCP connection timeout if no data is received from server
   timeout server   300s
+
+  # Timeout for WebSocket connections
+  timeout tunnel   3600s
 
 listen stats
   bind 127.0.0.1:9090

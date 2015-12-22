@@ -48,11 +48,14 @@ parser.add_option('-i', '--refresh-interval', dest='interval', help='Polling int
 parser.add_option('-e', '--expose-host', dest='exposehost', help='Expose services running in net=host mode. May cause port collisions when this container is also run in net=host mode on the same machine [default: %default]',
     action="store_true", default=parsebool(os.environ.get('EXPOSE_HOST', False)))
 
-parser.add_option('--pen-servers', dest='penservers', help='Max number of backend servers for each pen service [default: %default]',
-    type="int", default=parseint(os.environ.get('PEN_SERVERS', '32')))
-parser.add_option('--pen-clients', dest='penclients', help='Max number of pen client connections [default: %default]',
+parser.add_option('--max-connections', dest='maxconnections', help='Max number of connection per service [default: %default]',
+    type="int", default=parseint(os.environ.get('MAX_CONNECTIONS', '8192')))
+
+parser.add_option('--pen-servers', dest='penservers', help='Max number of backends for each service [default: %default]',
+    type="int", default=parseint(os.environ.get('PEN_SERVERS', '64')))
+parser.add_option('--pen-clients', dest='penclients', help='Max number of connection tracked clients [default: %default]',
     type="int", default=parseint(os.environ.get('PEN_CLIENTS', '8192')))
-    
+
 parser.add_option('--haproxy', dest='haproxy', help='Use HAproxy for TCP services instead of running everything through Pen [default: %default]',
     action="store_true", default=parsebool(os.environ.get('HAPROXY', False)))
 
@@ -85,19 +88,19 @@ if options.callback:
 backend = AggregateBackend(options.exposehost, set([callbackport]))
 
 if options.vhostdomain:
-    backend.add(NginxBackend(options.vhostport, options.vhostdomain, options.proxyprotocol))
+    backend.add(NginxBackend(options.vhostport, options.vhostdomain, options.proxyprotocol, options.maxconnections))
 
 # Option indicates preferance of HAproxy for TCP services
 if options.haproxy:
-    backend.add(HAProxyBackend())
+    backend.add(HAProxyBackend(options.maxconnections))
 
 # Pen is needed for UDP support so always add it
-backend.add(PenBackend(options.penservers, options.penclients))
+backend.add(PenBackend(options.maxconnections, options.penservers, options.penclients))
 
 # Add the HAproxy backend to handle the Marathon unix socket
 if not options.haproxy:
-    backend.add(HAProxyBackend())
- 
+    backend.add(HAProxyBackend(options.maxconnections))
+
 if options.registrator:
     registrator = RegistratorEtcdDiscovery(backend, options.registrator)
     registrator.start()

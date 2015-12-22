@@ -1,16 +1,16 @@
 import logging
-from mako.template import Template
 from proxymatic.util import *
 
 def precedence(service, prev):
     return service.port < prev.port
 
 class NginxBackend(object):
-    def __init__(self, port, domain, proxyprotocol):
+    def __init__(self, port, domain, proxyprotocol, maxconnections):
         self._port = port
         self._domain = domain
         self._proxyprotocol = proxyprotocol
-        self._cfgfile = '/etc/nginx/conf.d/default.conf'
+        self._maxconnections = maxconnections
+        self._cfgfile = '/etc/nginx/nginx.conf'
         
         # Render an empty default config without any vhosts since nginx won't start 
         # listening on port 80 unless the config is present at startup.
@@ -36,8 +36,9 @@ class NginxBackend(object):
 
     def _render(self, accepted):
         # Expand the config template
-        template = Template(filename='/etc/nginx/conf.d/default.conf.tpl')
-        config = template.render(services=accepted, port=self._port, domain=self._domain, proxyprotocol=self._proxyprotocol)
-        with open(self._cfgfile, 'w') as f:
-            f.write(config)
-        
+        renderTemplate('/etc/nginx/nginx.conf.tpl', self._cfgfile, {
+            'services': accepted, 
+            'port': self._port, 
+            'domain': self._domain, 
+            'proxyprotocol': self._proxyprotocol, 
+            'maxconnections': self._maxconnections})

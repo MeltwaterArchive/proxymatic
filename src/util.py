@@ -1,4 +1,5 @@
 import logging, os, re, signal, time, threading, traceback, urllib2, httplib, socket, subprocess
+from mako.template import Template
 
 def post(url, data='{}'):
     request = urllib2.Request(url, data)
@@ -96,3 +97,14 @@ def unixrequest(method, socketpath, url, body=None, headers={}):
     conn.request(method, url, body, headers)
     resp = conn.getresponse()
     return resp.read()
+
+def renderTemplate(src, dst, vals):
+    template = Template(filename=src)
+    config = template.render(**vals)
+    tmpfile = "%s.tmp" % dst
+    with open(tmpfile, 'w') as f:
+        f.write(config)
+
+    # Rename tmpfile to avoid modifying an existing file in place which can
+    # cause a process reading it concurrent to read inconsistent data
+    os.rename(tmpfile, dst)

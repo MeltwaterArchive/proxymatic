@@ -1,9 +1,16 @@
 import logging, socket, time, urllib2, json
+from cachetools import lru_cache
 from urllib import urlencode
 from urlparse import urlparse
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 from proxymatic.services import Server, Service
 from proxymatic.util import *
+
+@lru_cache(maxsize=1024)
+def _getAppVersion(socketpath, appid, version):
+    path = '/v2/apps/%s/versions/%s' % (appid.strip('/'), version)
+    response = unixrequest('GET', socketpath, path, None, {'Accept': 'application/json'})
+    return json.loads(response)
 
 class MarathonDiscovery(object):
     def __init__(self, backend, urls, callback, interval):
@@ -65,9 +72,9 @@ class MarathonDiscovery(object):
         finally:
             self._backend.update(self, services)
         logging.debug("Refreshed services from Marathon at %s", self._urls)
-        
+
     def _parse(self, content):
-        logging.debug(content)
+        #logging.debug(content)
 
         services = {}
         document = json.loads(content)
@@ -83,6 +90,9 @@ class MarathonDiscovery(object):
             return not alive
 
         for task in document.get('tasks', []):
+            # Fetch exact config for this app version
+            taskConfig = _getAppVersion(self._socketpath, task.get('appId'), task.get('version'))
+            
             exposedPorts = task.get('ports', [])
             servicePorts = task.get('servicePorts', [])
             seenServicePorts = set()
@@ -98,7 +108,14 @@ class MarathonDiscovery(object):
                 seenServicePorts.add(servicePort)
 
                 # Verify that all health checks pass
-                if any(failed(check) for check in task.get('healthCheckResults',[])):
+                healthChecks = taskConfig.get('healthChecks', [])
+                healthResults = task.get('healthCheckResults', [])
+                
+                if any(failed(check) for check in healthResults):
+                    continue
+                
+                if len(healthResults) < len(healthChecks):
+                    logging.debug("Skipping task %s which hasn't responded to health checks yet", task.get('id',''))
                     continue
 
                 try:

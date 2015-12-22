@@ -1,9 +1,9 @@
 import os, logging
-from mako.template import Template
 from proxymatic.util import *
 
 class PenBackend(object):
-    def __init__(self, maxservers, maxclients):
+    def __init__(self, maxconnections, maxservers, maxclients):
+        self._maxconnections = maxconnections
         self._maxservers = maxservers
         self._maxclients = maxclients
         self._state = {}
@@ -47,6 +47,7 @@ class PenBackend(object):
             '-r', # Disable sticky sessions
             '-W', # Use weight/least-connected balancing mode
             '-u', 'pen',
+            '-x', str(self._maxconnections),
             '-c', str(self._maxclients), 
             '-S', str(self._maxservers), 
             '-F', cfgfile, 
@@ -62,10 +63,7 @@ class PenBackend(object):
             'servers': set(service.servers)}
         
         # Write the configuration file
-        template = Template(filename='/etc/pen/pen.cfg.tpl')
-        config = template.render(service=service, maxservers=self._maxservers)
-        with open(cfgfile, 'w') as f:
-            f.write(config)
+        renderTemplate('/etc/pen/pen.cfg.tpl', cfgfile, {'service': service, 'maxservers': self._maxservers})
 
         # Try to reload (SIGHUP) an existing pen
         if prev and kill(prev['pidfile'], signal.SIGHUP):

@@ -1,9 +1,11 @@
 import logging
-from mako.template import Template
 from proxymatic.util import *
 
 class HAProxyBackend(object):
-    def __init__(self):
+    def __init__(self, maxconnections):
+        self._maxconnections = maxconnections
+        self._cfgfile = '/etc/haproxy/haproxy.cfg'
+        self._render({})
         shell('haproxy -f /etc/haproxy/haproxy.cfg -p /run/haproxy.pid')
 
     def update(self, source, services):
@@ -13,12 +15,13 @@ class HAProxyBackend(object):
             if service.protocol == 'tcp' or service.protocol == 'unix':
                 accepted[key] = service
         
-        # Expand the config template
-        template = Template(filename='/etc/haproxy/haproxy.cfg.tpl')
-        config = template.render(services=accepted)
-        with open('/etc/haproxy/haproxy.cfg', 'w') as f:
-            f.write(config)
-        
+        self._render(accepted)
+
         # Instruct HAproxy to reload the config
-        shell('haproxy -f /etc/haproxy/haproxy.cfg -p /run/haproxy.pid -sf $(cat /run/haproxy.pid)')
+        logging.debug("Reloaded the HAproxy config '%s'", self._cfgfile)
+        shell('haproxy -f %s -p /run/haproxy.pid -sf $(cat /run/haproxy.pid)' % self._cfgfile)
         return accepted
+
+    def _render(self, accepted):
+        # Expand the config template
+        renderTemplate('/etc/haproxy/haproxy.cfg.tpl', self._cfgfile, {'services': accepted, 'maxconnections': self._maxconnections})
