@@ -21,12 +21,14 @@ class Server(object):
         return 'Server(%s, %s)' % (repr(self.ip), repr(self.port))
 
 class Service(object):
-    def __init__(self, name, source, port, protocol, application='binary'):
+    def __init__(self, name, source, port, protocol, application='binary', healthcheck=False, healthcheckurl='/'):
         self.name = name
         self.source = source
         self.port = port
         self.protocol = protocol
         self.application = application
+        self.healthcheck = healthcheck
+        self.healthcheckurl = healthcheckurl
         self.servers = set()
         self.slots = []
         
@@ -36,6 +38,12 @@ class Service(object):
             self.name = self.name[0:-(len(match.group(1))+1)]
             self.port = int(match.group(1))
         
+    def clone(self):
+        clone = Service(self.name, self.source, self.port, self.protocol, self.application, self.healthcheck, self.healthcheckurl)
+        clone.servers = set(self.servers)
+        clone.slots = list(self.slots)
+        return clone
+
     def __str__(self):
         return '%s:%s/%s -> [%s]' % (self.name, self.port, self.protocol, ', '.join([str(s) for s in self.servers]))
 
@@ -53,12 +61,6 @@ class Service(object):
     @property
     def portname(self):
         return re.sub('[^a-zA-Z0-9]', '_', str(self.port))
-
-    def clone(self):
-        clone = Service(self.name, self.source, self.port, self.protocol)
-        clone.servers = set(self.servers)
-        clone.slots = list(self.slots)
-        return clone
 
     def update(self, other):
         """

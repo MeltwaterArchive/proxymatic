@@ -38,11 +38,15 @@ listen service-${service.portname}
 % else:
   bind 0.0.0.0:${service.port}
 % endif
-  mode ${'http' if service.application == 'http' else 'tcp'}
   balance leastconn
+  mode ${'http' if service.application == 'http' else 'tcp'}
+% if service.healthcheck and service.application == 'http':
+  option httpchk get ${service.healthcheckurl}
+% endif
+  default-server inter 30s
 % 	for server, i in zip(service.slots, range(len(service.slots))):
 %     if server:
-  server backend-${service.portname}-${i} ${server.ip}:${server.port}
+  server backend-${service.portname}-${i} ${server.ip}:${server.port}${' check' if service.healthcheck else ''}
 %     endif
 % 	endfor  
 
