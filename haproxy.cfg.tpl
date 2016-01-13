@@ -30,13 +30,6 @@ defaults
   # Timeout for WebSocket connections
   timeout tunnel   3600s
 
-listen stats
-  bind 127.0.0.1:9090
-  balance
-  mode http
-  stats enable
-  stats auth admin:admin
-
 % for service in services.values():
 # ${service.name} (${service.source})
 listen service-${service.portname}
@@ -45,12 +38,11 @@ listen service-${service.portname}
 % else:
   bind 0.0.0.0:${service.port}
 % endif
-  mode tcp
-  #option tcplog
+  mode ${'http' if service.application == 'http' else 'tcp'}
   balance leastconn
 % 	for server, i in zip(service.slots, range(len(service.slots))):
 %     if server:
-  server backend-${service.portname}-${i} ${server.ip}:${server.port} check
+  server backend-${service.portname}-${i} ${server.ip}:${server.port}
 %     endif
 % 	endfor  
 

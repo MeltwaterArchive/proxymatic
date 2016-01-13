@@ -53,7 +53,7 @@ class MarathonDiscovery(object):
         services = {}
 
         # Start the local load balancer in front of Marathon
-        service = Service('marathon.local', 'marathon:%s' % self._urls, self._socketpath, 'unix')
+        service = Service('marathon.local', 'marathon:%s' % self._urls, self._socketpath, 'unix', 'http')
         services[self._socketpath] = service
 
         for url in self._urls:

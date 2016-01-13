@@ -21,11 +21,12 @@ class Server(object):
         return 'Server(%s, %s)' % (repr(self.ip), repr(self.port))
 
 class Service(object):
-    def __init__(self, name, source, port, protocol):
+    def __init__(self, name, source, port, protocol, application='binary'):
         self.name = name
         self.source = source
         self.port = port
         self.protocol = protocol
+        self.application = application
         self.servers = set()
         self.slots = []
         
