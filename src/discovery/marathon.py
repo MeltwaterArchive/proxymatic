@@ -12,6 +12,10 @@ def _getAppVersion(socketpath, appid, version):
     response = unixrequest('GET', socketpath, path, None, {'Accept': 'application/json'})
     return json.loads(response)
 
+class MarathonService(object):
+    def __init__(self):
+        self.priority = 100
+
 class MarathonDiscovery(object):
     def __init__(self, backend, urls, callback, interval):
         self._backend = backend
@@ -19,6 +23,7 @@ class MarathonDiscovery(object):
         self._socketpath = '/tmp/marathon.sock'
         self._callback = callback
         self._interval = interval
+        self._marathonService = MarathonService()
         self.priority = 10
 
     def start(self):
@@ -49,14 +54,11 @@ class MarathonDiscovery(object):
             time.sleep(marathon._interval)
         run(refresh, "Marathon error from '" + str(self._urls) + "/v2/tasks': %s")
         
-    def _refresh(self):
-        services = {}
-
+    def _connect(self):
         # Start the local load balancer in front of Marathon
         service = Service(
             'marathon.local', 'marathon:%s' % self._urls, self._socketpath, 'unix', 
             'http', healthcheck=True, healthcheckurl='/ping')
-        services[self._socketpath] = service
 
         for url in self._urls:
             parsed = urlparse(url)
@@ -66,13 +68,16 @@ class MarathonDiscovery(object):
             server = Server(ipaddr, parsed.port or 80)
             service._add(server)
 
+        self._backend.update(self._marathonService, {self._socketpath: service})
+
+    def _refresh(self):
+        # Ensure the HAproxy load balancer is configured to proxy to the Marathon replicas
+        self._connect()
+
         # Poll Marathon for running tasks
-        try:
-            logging.debug("GET Marathon services from %s", self._socketpath)
-            response = unixrequest('GET', self._socketpath, '/v2/tasks', None, {'Accept': 'application/json'})
-            services.update(self._parse(response))
-        finally:
-            self._backend.update(self, services)
+        logging.debug("GET Marathon services from %s", self._socketpath)
+        response = unixrequest('GET', self._socketpath, '/v2/tasks', None, {'Accept': 'application/json'})
+        self._backend.update(self, self._parse(response))
         logging.debug("Refreshed services from Marathon at %s", self._urls)
 
     def _parse(self, content):

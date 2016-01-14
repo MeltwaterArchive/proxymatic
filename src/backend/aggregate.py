@@ -11,6 +11,7 @@ class AggregateBackend(object):
     
     def add(self, backend):
         self._backends.append(backend)
+
     def update(self, source, services):
         """
         @param source Discovery source that originated this update, e.g. Marathon or etcd

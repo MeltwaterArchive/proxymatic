@@ -26,7 +26,7 @@ class RegistratorEtcdDiscovery(object):
         
         # Run action() in thread with retry on error
         run(action, "etcd error from '" + self._url.geturl() + "': %s")
-        Hahaha
+
     def _parse(self, content):
         services = {}
         state = json.loads(content)
