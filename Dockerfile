@@ -1,7 +1,7 @@
 FROM fedora:23
 
-# Install HAproxy/Pen/NGinx TCP/UDP proxies, Mako for config templates
-RUN dnf -y install haproxy pen nginx python-mako python-pip procps && \
+# Install HAproxy/Pen/NGinx TCP/UDP proxies. Mako for config templates. GeoIP because Pen depends on it
+RUN dnf -y install haproxy pen GeoIP-GeoLite-data-extra nginx python-mako python-pip procps && \
 	dnf clean all
 
 ADD requirements.txt /tmp/requirements.txt
