@@ -49,7 +49,6 @@ class PenBackend(object):
             '-u', 'pen',
             '-x', str(self._maxconnections),
             '-c', str(self._maxclients), 
-            '-S', str(self._maxservers), 
             '-F', cfgfile, 
             '-p', pidfile,
             '-C', ctlfile]
