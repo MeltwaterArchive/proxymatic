@@ -1,4 +1,4 @@
-import logging, socket, time, urllib2, json
+import sys, logging, socket, time, urllib2, json
 from cachetools import lru_cache
 from urllib import urlencode
 from urlparse import urlparse
@@ -34,8 +34,12 @@ class MarathonDiscovery(object):
             class CallbackHandler(BaseHTTPRequestHandler):
                 def do_POST(self):
                     logging.debug("Received HTTP callback from Marathon")
-                    marathon._refresh()
-            
+                    try:
+                        marathon._refresh()
+                    except Exception, e:
+                        logging.warn(str(e))
+                        logging.debug(traceback.format_exc())
+
             callbackurl = urlparse(marathon._callback)
             server = HTTPServer(('', callbackurl.port or 80), CallbackHandler)
             server.timeout = marathon._interval
@@ -81,10 +85,13 @@ class MarathonDiscovery(object):
         logging.debug("Refreshed services from Marathon at %s", self._urls)
 
     def _parse(self, content):
-        #logging.debug(content)
-
         services = {}
-        document = json.loads(content)
+
+        try:
+            #logging.debug(content)
+            document = json.loads(content)
+        except ValueError, e:
+            raise RuntimeError("Failed to parse HTTP JSON response from Marathon (%s): %s" % (str(e), str(content)[0:150]))
 
         def failed(check):
             alive = check.get('alive', False)
