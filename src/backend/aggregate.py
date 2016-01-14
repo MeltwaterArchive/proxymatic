@@ -24,10 +24,8 @@ class AggregateBackend(object):
             logging.debug("Existing services: %s", services.items())
             for key, service in services.items():
                 if key in prev:
-                    logging.debug("Updating service: " + key)
                     next[key] = prev[key].update(service)
                 else:
-                    logging.debug("Found new service: key: %s, service: %s", key, service)
                     next[key] = service
             self._sources[source] = next
             
@@ -38,27 +36,25 @@ class AggregateBackend(object):
                     if self._accepts(service):
                         merged[key] = service
 
-            # Reconfigure proxy implementations
-            if self._prev != merged:
-                # Log changes to services and server backends
-                for key, service in merged.items():
-                    if key not in self._prev:
-                        logging.info("Added: %s", service)
-                    elif self._prev[key] != service:
-                        logging.info("Modified: %s to %s", self._prev[key], service)
-                for key, service in self._prev.items():
-                    if key not in merged:
-                        logging.info("Removed: %s", service)
-                
-                # Apply config changes
-                remaining = dict(merged)
-                for config in self._backends:
-                    accepted = config.update(self, remaining)
-                    for key in accepted.keys():
-                        del remaining[key]
+            # Log changes to services and server backends
+            for key, service in merged.items():
+                if key not in self._prev:
+                    logging.info("Added: %s", service)
+                elif self._prev[key] != service:
+                    logging.info("Modified: %s to %s", self._prev[key], service)
+            for key, service in self._prev.items():
+                if key not in merged:
+                    logging.info("Removed: %s", service)
 
-                # Remember the state until next update
-                self._prev = merged
+            # Apply config changes
+            remaining = dict(merged)
+            for backend in self._backends:
+                accepted = backend.update(self, remaining)
+                for key in accepted.keys():
+                    del remaining[key]
+
+            # Remember the state until next update
+            self._prev = merged
                 
     def _accepts(self, service):
         # Filter services running in net=host mode

@@ -4,6 +4,7 @@ from proxymatic.util import *
 class HAProxyBackend(object):
     def __init__(self, maxconnections):
         self._maxconnections = maxconnections
+        self._prev = {}
         self._cfgfile = '/etc/haproxy/haproxy.cfg'
         self._render({})
         shell('haproxy -f /etc/haproxy/haproxy.cfg -p /run/haproxy.pid')
@@ -15,11 +16,15 @@ class HAProxyBackend(object):
             if service.protocol == 'tcp' or service.protocol == 'unix':
                 accepted[key] = service
         
-        self._render(accepted)
+        # Check if anything has changed
+        if self._prev != accepted:
+            self._render(accepted)
 
-        # Instruct HAproxy to reload the config
-        logging.debug("Reloaded the HAproxy config '%s'", self._cfgfile)
-        shell('haproxy -f %s -p /run/haproxy.pid -sf $(cat /run/haproxy.pid)' % self._cfgfile)
+            # Instruct HAproxy to reload the config
+            logging.debug("Reloaded the HAproxy config '%s'", self._cfgfile)
+            shell('haproxy -f %s -p /run/haproxy.pid -sf $(cat /run/haproxy.pid)' % self._cfgfile)
+            self._prev = accepted
+
         return accepted
 
     def _render(self, accepted):

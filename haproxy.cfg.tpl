@@ -9,7 +9,10 @@ global
   #log 127.0.0.1 local1 notice
   
   # Max total number of connections
-  maxconn          ${maxconnections}
+  maxconn          ${int(maxconnections*2)}
+
+  # Distribute the health checks with a bit of randomness
+  spread-checks 5
 
 defaults
   #log            global
@@ -19,8 +22,8 @@ defaults
   maxconn          ${maxconnections}
 
   # Timeout to establish a connection to the backend server
-  timeout connect    5s
-  
+  timeout connect  5s
+
   # TCP connection timeout if no data is received from client
   timeout client   300s
   
@@ -29,6 +32,9 @@ defaults
 
   # Timeout for WebSocket connections
   timeout tunnel   3600s
+
+  # Timeout for health check
+  timeout check    5s
 
 % for service in services.values():
 # ${service.name} (${service.source})
@@ -43,7 +49,7 @@ listen service-${service.portname}
 % if service.healthcheck and service.application == 'http':
   option httpchk get ${service.healthcheckurl}
 % endif
-  default-server inter 30s
+  default-server inter 15s
 % 	for server, i in zip(service.slots, range(len(service.slots))):
 %     if server:
   server backend-${service.portname}-${i} ${server.ip}:${server.port}${' check' if service.healthcheck else ''}

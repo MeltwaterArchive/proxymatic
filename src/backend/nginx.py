@@ -10,6 +10,7 @@ class NginxBackend(object):
         self._domain = domain
         self._proxyprotocol = proxyprotocol
         self._maxconnections = maxconnections
+        self._prev = {}
         self._cfgfile = '/etc/nginx/nginx.conf'
         
         # Render an empty default config without any vhosts since nginx won't start 
@@ -26,12 +27,16 @@ class NginxBackend(object):
         for key, service in services.items():
             if service.protocol == 'tcp' and (service.name not in accepted or precedence(service, accepted[service.name])):
                 accepted[service.name] = service
-        
-        self._render(accepted)
-        
-        # Instruct Nginx to reload the config
-        logging.debug("Reloaded the Nginx config '%s'", self._cfgfile)
-        shell('nginx -s reload')
+
+        # Check if anything has changed
+        if self._prev != accepted:
+            self._render(accepted)
+
+            # Instruct Nginx to reload the config
+            logging.debug("Reloaded the Nginx config '%s'", self._cfgfile)
+            shell('nginx -s reload')
+            self._prev = accepted
+
         return {}
 
     def _render(self, accepted):
