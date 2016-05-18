@@ -1,8 +1,6 @@
-import sys, logging, socket, time, urllib2, json
+import sys, logging, socket, time, json, threading
 from cachetools import lru_cache
-from urllib import urlencode
 from urlparse import urlparse
-from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 from proxymatic.services import Server, Service
 from proxymatic.util import *
 
@@ -17,46 +15,70 @@ class MarathonService(object):
         self.priority = 100
 
 class MarathonDiscovery(object):
-    def __init__(self, backend, urls, callback, interval):
+    def __init__(self, backend, urls, interval):
         self._backend = backend
         self._urls = [url.rstrip('/') for url in urls]
         self._socketpath = '/tmp/marathon.sock'
-        self._callback = callback
         self._interval = interval
         self._marathonService = MarathonService()
         self.priority = 10
+        
+        # Signal to perform a refresh. This avoid performing multiple refreshes
+        # when many events are received in quick succession.
+        self._condition = threading.Condition()
+        self._dorefresh = False
 
     def start(self):
         marathon = self
-        
-        if marathon._callback:
-            # Start a HTTP server that listens for callbacks from Marathon
-            class CallbackHandler(BaseHTTPRequestHandler):
-                def do_POST(self):
-                    logging.debug("Received HTTP callback from Marathon")
-                    try:
-                        marathon._refresh()
-                    except Exception, e:
-                        logging.warn(str(e))
-                        logging.debug(traceback.format_exc())
 
-            callbackurl = urlparse(marathon._callback)
-            server = HTTPServer(('', callbackurl.port or 80), CallbackHandler)
-            server.timeout = marathon._interval
-            run(server.serve_forever, "Error processing Marathon HTTP callback from '" + str(marathon._urls) + "': %s")
+        # Trigger the refresh and release the refresh thread
+        def triggerRefresh():
+            marathon._condition.acquire()
+            marathon._dorefresh = True
+            marathon._condition.notify()
+            marathon._condition.release()
 
-            def register():
-                # Subscribe to Marathon events
-                response = unixrequest('POST', self._socketpath, '/v2/eventSubscriptions?%s' % urlencode({'callbackUrl': marathon._callback}))
-                logging.debug("Registered Marathon HTTP callback with %s", marathon._urls)
-                time.sleep(marathon._interval)
-            run(register, "Error registering Marathon HTTP callback with '" + str(self._urls) + "': %s")
+        # Consume the Marathon event stream
+        def eventstream():
+            # Initiate the request which will push server sent events
+            response = unixresponse('GET', self._socketpath, '/v2/events', None, {'Accept': 'text/event-stream'})
+            if response.status < 200 or response.status >= 300:
+                raise ValueError(response.read())
+
+            # Consume server sent events one per line
+            logging.info("Subscribed to Marathon event stream")
+            while True:
+                data = response.fp.readline()
+                if data == "":
+                    raise ValueError("Marathon event stream closed")
+                
+                # Events affecting state copied from https://github.com/mesosphere/marathon-lb/blob/master/marathon_lb.py
+                if data.startswith('event:') and (
+                        'health_status_changed_event' in data or 
+                        'status_update_event' in data or 
+                        'api_post_event' in data):
+                    logging.info('Received %s', data)
+                    triggerRefresh()
+
+        run(eventstream, "Error subscribing to Marathon event stream '" + str(self._urls) + "': %s")
 
         # Run refresh() in thread with retry on error
-        def refresh():
-            marathon._refresh()
-            time.sleep(marathon._interval)
-        run(refresh, "Marathon error from '" + str(self._urls) + "/v2/tasks': %s")
+        def refreshWorker():
+            with marathon._condition:
+                # Check if refresh should be triggered immediately
+                marathon._condition.acquire()
+                if not marathon._dorefresh:
+                    # Wait for the trigger, but perform a refresh anyway when the wait expires
+                    marathon._condition.wait(marathon._interval)
+                
+                # Reset the trigger
+                marathon._dorefresh = False
+                marathon._condition.release()
+                
+                # Perform the refresh
+                marathon._refresh()
+        
+        run(refreshWorker, "Marathon error from '" + str(self._urls) + "/v2/tasks': %s")
         
     def _connect(self):
         # Start the local load balancer in front of Marathon
