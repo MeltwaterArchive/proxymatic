@@ -1,13 +1,12 @@
 import logging, threading
 
 class AggregateBackend(object):
-    def __init__(self, exposehost, ignoreports):
+    def __init__(self, exposehost):
         self._exposehost = exposehost
         self._backends = []
         self._sources = {}
         self._lock = threading.RLock()
         self._prev = {}
-        self._ignoreports = ignoreports
     
     def add(self, backend):
         self._backends.append(backend)
@@ -61,9 +60,5 @@ class AggregateBackend(object):
         for server in service.servers:
             if not self._exposehost and server.port == str(service.port):
                 return False
-        
-        # Filter the Marathon HTTP callback port
-        if service.port in self._ignoreports:
-            return False
         
         return True

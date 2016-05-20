@@ -92,11 +92,13 @@ class UnixHTTPConnection(httplib.HTTPConnection):
         sock.connect(self.path)
         self.sock = sock
 
-def unixrequest(method, socketpath, url, body=None, headers={}):
+def unixresponse(method, socketpath, url, body=None, headers={}):
     conn = UnixHTTPConnection(socketpath)
     conn.request(method, url, body, headers)
-    resp = conn.getresponse()
-    return resp.read()
+    return conn.getresponse()
+
+def unixrequest(method, socketpath, url, body=None, headers={}):
+    return unixresponse(method, socketpath, url, body, headers).read()
 
 def renderTemplate(src, dst, vals):
     template = Template(filename=src)

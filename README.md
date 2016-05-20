@@ -4,7 +4,6 @@ The proxymatic image forms one part of a network level service discovery solutio
 ## Environment Variables
 
  * **MARATHON_URL** - List of Marathon replicas, e.g. "http://marathon-01:8080/,http://marathon-02:8080/"
- * **MARATHON_CALLBACK_URL** - URL to register for Marathon HTTP callbacks, e.g. "http://\`hostname -f\`:5090/"
  * **REGISTRATOR_URL** - URL where registrator publishes services, e.g. "etcd://localhost:4001/services"
  * **REFRESH_INTERVAL=60** - Polling interval when using non-event capable backends. Defaults to 60 seconds.
  * **EXPOSE_HOST=false** - Expose services running in net=host mode. May cause port collisions when this container is also run in net=host mode. Defaults to false.
@@ -25,9 +24,6 @@ Options:
   -m MARATHON, --marathon=MARATHON
                         List of Marathon replicas, e.g.
                         "http://marathon-01:8080/,http://marathon-02:8080/"
-  -c CALLBACK, --marathon-callback=CALLBACK
-                        URL to register for Marathon HTTP callbacks, e.g.
-                        "http://`hostname -f`:5090/"
   -r REGISTRATOR, --registrator=REGISTRATOR
                         URL where registrator publishes services, e.g. "etcd
                         ://etcd-host:4001/services"
@@ -56,12 +52,12 @@ Options:
 
 ## Marathon
 
-Given a Marathon URL, proxymatic will periodically fetch the running tasks and configure proxies that forward connections from the [servicePort](http://mesosphere.com/docs/getting-started/service-discovery/) to the host and port exposed by the task. If Marathon is started with [HTTP callback support](https://mesosphere.github.io/marathon/docs/event-bus.html) then proxymatic can be notified immediately, which cuts the response time in case of failover or scaling.
+Given a Marathon URL, proxymatic will fetch the running tasks and configure proxies that forward connections from the [servicePort](http://mesosphere.com/docs/getting-started/service-discovery/) to the host and port exposed by the task. Proxymatic subscribes to the [Marathon event bus](https://mesosphere.github.io/marathon/docs/event-bus.html) 
+and receive cluster changes immediately when they occur, which cuts the response time in case of failover or scaling.
 
 ```
 docker run --net=host \
   -e MARATHON_URL=http://marathon-host:8080 \
-  -e MARATHON_CALLBACK_URL=http://$(hostname --fqdn):5090 \
   meltwater/proxymatic:latest
 ```
 
@@ -176,11 +172,10 @@ RestartSec=15
 
 ExecStartPre=-/usr/bin/docker kill $NAME
 ExecStartPre=-/usr/bin/docker rm $NAME
-ExecStartPre=-/bin/sh -c 'if ! docker images | tr -s " " : | grep "^${IMAGE}:"; then docker pull "${IMAGE}"; fi'
+ExecStartPre=-/usr/bin/docker pull $IMAGE
 ExecStart=/usr/bin/docker run --net=host \
     --name=${NAME} \
     -e MARATHON_URL=http://marathon-host:8080 \
-    -e MARATHON_CALLBACK_URL=http://%H:5090 \
     $IMAGE
 
 ExecStop=/usr/bin/docker stop $NAME
@@ -203,5 +198,4 @@ docker::run_instance:
     net: 'host'
     env:
       - "MARATHON_URL=http://marathon-host:8080"
-      - "MARATHON_CALLBACK_URL=http://%{::hostname}:5090"
 ```

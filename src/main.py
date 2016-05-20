@@ -37,7 +37,7 @@ def parselist(value):
         
 parser.add_option('-m', '--marathon', dest='marathon', help='List of Marathon replicas, e.g. "http://marathon-01:8080/,http://marathon-02:8080/"',
     default=os.environ.get('MARATHON_URL', ''))
-parser.add_option('-c', '--marathon-callback', dest='callback', help='URL to listen for Marathon HTTP callbacks, e.g. "http://`hostname -f`:5090/"',
+parser.add_option('-c', '--marathon-callback', dest='callback', help='[DEPRECATED] URL to listen for Marathon HTTP callbacks, e.g. "http://`hostname -f`:5090/"',
     default=os.environ.get('MARATHON_CALLBACK_URL', None))
     
 parser.add_option('-r', '--registrator', dest='registrator', help='URL where registrator publishes services, e.g. "etcd://etcd-host:4001/services"',
@@ -80,12 +80,7 @@ if not options.registrator and not options.marathon:
     parser.print_help()
     sys.exit(1)
 
-# Fetch port to listen for Marathon callbacks
-callbackport = None
-if options.callback:
-	callbackurl = urlparse(options.callback)
-	callbackport = callbackurl.port or 80
-backend = AggregateBackend(options.exposehost, set([callbackport]))
+backend = AggregateBackend(options.exposehost)
 
 if options.vhostdomain:
     backend.add(NginxBackend(options.vhostport, options.vhostdomain, options.proxyprotocol, options.maxconnections))
@@ -106,7 +101,7 @@ if options.registrator:
     registrator.start()
 
 if options.marathon:
-    marathon = MarathonDiscovery(backend, parselist(options.marathon), options.callback, options.interval)
+    marathon = MarathonDiscovery(backend, parselist(options.marathon), options.interval)
     marathon.start()
 
 # Loop forever and allow the threads to work. Setting the threads to daemon=False and returning 
