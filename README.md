@@ -39,7 +39,7 @@ Options:
   --pen-clients=PENCLIENTS
                         Max number of pen client connections [default: 8192]
   --haproxy             Use HAproxy for TCP services instead of running
-                        everything through Pen [default: False]
+                        everything through Pen [default: True]
   --vhost-domain=VHOSTDOMAIN
                         Domain to add service virtual host under, e.g.
                         "services.example.com"

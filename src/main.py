@@ -57,7 +57,7 @@ parser.add_option('--pen-clients', dest='penclients', help='Max number of connec
     type="int", default=parseint(os.environ.get('PEN_CLIENTS', '8192')))
 
 parser.add_option('--haproxy', dest='haproxy', help='Use HAproxy for TCP services instead of running everything through Pen [default: %default]',
-    action="store_true", default=parsebool(os.environ.get('HAPROXY', False)))
+    action="store_true", default=parsebool(os.environ.get('HAPROXY', True)))
 
 parser.add_option('--vhost-domain', dest='vhostdomain', help='Domain to add service virtual host under, e.g. "services.example.com"',
     default=os.environ.get('VHOST_DOMAIN', None))
