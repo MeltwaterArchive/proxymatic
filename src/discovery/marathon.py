@@ -137,6 +137,11 @@ class MarathonDiscovery(object):
                 protocol = 'tcp'
                 key = '%s/%s' % (servicePort, protocol.lower())
 
+                # Marathon has been observed to sometimes return servicePort=0 failure cases
+                if str(servicePort) == '0':
+                    logging.warn("Skipping task with servicePort=0")
+                    continue
+
                 # Marathon returns multiple entries for services that expose both TCP and UDP using the same 
                 # port number. There's no way to separate TCP and UDP service ports at the moment.
                 if servicePort in seenServicePorts:
