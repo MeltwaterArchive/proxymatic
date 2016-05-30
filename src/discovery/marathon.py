@@ -28,6 +28,9 @@ class MarathonDiscovery(object):
         self._condition = threading.Condition()
         self._dorefresh = False
 
+        # Ensure the HAproxy load balancer is configured to proxy to the Marathon replicas
+        self._connect()
+
     def start(self):
         marathon = self
 
@@ -53,14 +56,16 @@ class MarathonDiscovery(object):
                     raise ValueError("Marathon event stream closed")
                 
                 # Events affecting state copied from https://github.com/mesosphere/marathon-lb/blob/master/marathon_lb.py
-                if data.startswith('event:') and (
-                        'health_status_changed_event' in data or 
+                if data.startswith('event:'):
+                    if ('health_status_changed_event' in data or
                         'status_update_event' in data or 
                         'api_post_event' in data):
-                    logging.info('Received %s', data)
-                    triggerRefresh()
+                        logging.info('Triggering refresh based on Marathon %s', data.strip())
+                        triggerRefresh()
+                    else:
+                        logging.debug('Ignoring Marathon %s', data.strip())
 
-        run(eventstream, "Error subscribing to Marathon event stream '" + str(self._urls) + "': %s")
+        run(eventstream, "Error subscribing to Marathon event stream '" + str(self._urls) + "': %s", graceperiod=60)
 
         # Run refresh() in thread with retry on error
         def refreshWorker():
@@ -69,7 +74,7 @@ class MarathonDiscovery(object):
                 marathon._condition.acquire()
                 if not marathon._dorefresh:
                     # Wait for the trigger, but perform a refresh anyway when the wait expires
-                    marathon._condition.wait(marathon._interval)
+                    marathon._condition.wait(jitter(marathon._interval))
                 
                 # Reset the trigger
                 marathon._dorefresh = False
@@ -78,12 +83,12 @@ class MarathonDiscovery(object):
                 # Perform the refresh
                 marathon._refresh()
         
-        run(refreshWorker, "Marathon error from '" + str(self._urls) + "/v2/tasks': %s")
+        run(refreshWorker, "Marathon error from '" + str(self._urls) + "/v2/tasks': %s", graceperiod=60)
         
     def _connect(self):
         # Start the local load balancer in front of Marathon
         service = Service(
-            'marathon.local', 'marathon:%s' % self._urls, self._socketpath, 'unix', 
+            'marathon', 'marathon:%s' % self._urls, self._socketpath, 'unix',
             'http', healthcheck=True, healthcheckurl='/ping')
 
         for url in self._urls:
@@ -97,9 +102,6 @@ class MarathonDiscovery(object):
         self._backend.update(self._marathonService, {self._socketpath: service})
 
     def _refresh(self):
-        # Ensure the HAproxy load balancer is configured to proxy to the Marathon replicas
-        self._connect()
-
         # Poll Marathon for running tasks
         logging.debug("GET Marathon services from %s", self._socketpath)
         response = unixrequest('GET', self._socketpath, '/v2/tasks', None, {'Accept': 'application/json'})
@@ -152,10 +154,13 @@ class MarathonDiscovery(object):
                 healthChecks = taskConfig.get('healthChecks', [])
                 healthResults = task.get('healthCheckResults', [])
                 
+                # Skip any task that isn't alive according to its health checks
                 if any(failed(check) for check in healthResults):
                     continue
                 
-                if len(healthResults) < len(healthChecks):
+                # Skip tasks that hasn't yet responded to at least one of their health checks. Note that Marathon 
+                # considers tasks ready as soon as they respond OK to one of their defined health checks.
+                if len(healthChecks) > 0 and len(healthResults) == 0:
                     logging.debug("Skipping task %s which hasn't responded to health checks yet", task.get('id',''))
                     continue
 

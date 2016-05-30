@@ -71,10 +71,12 @@ parser.add_option('-v', '--verbose', dest='verbose', help='Increase logging verb
 
 (options, args) = parser.parse_args()
 
+# Use timestamps in log messages
+logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s %(message)s')
+
+# Optionally increase log level
 if options.verbose:
     logging.getLogger().setLevel(logging.DEBUG)
-else:
-    logging.getLogger().setLevel(logging.INFO)
 
 if not options.registrator and not options.marathon:
     parser.print_help()

@@ -1,4 +1,4 @@
-import logging, os, re, signal, time, threading, traceback, urllib2, httplib, socket, subprocess
+import logging, os, re, signal, time, threading, traceback, urllib2, httplib, socket, subprocess, random
 from mako.template import Template
 
 def post(url, data='{}'):
@@ -56,21 +56,31 @@ def kill(pidfile, sig=signal.SIGKILL):
         logging.debug(traceback.format_exc())
     return False
 
-def run(action, errormsg="Connection error: %s"):
+def run(action, errormsg="Connection error: %s", graceperiod=0):
     """
     Run action() in background forever and retry with exponential backoff in case of errors.
     """
+    starttime = time.time()
+
     def routine():
-        timeout = 1
+        timeout = 1.0
         while True:
             try:
                 action()
-                timeout = 1
+                timeout = 1.0
             except Exception, e:
-                logging.warn(errormsg, str(e))
+                # Don't warn for startup errors when graceperiod is set
+                if starttime + graceperiod <= time.time():
+                    logging.warn(errormsg, str(e))
+                else:
+                    logging.debug(errormsg, str(e))
                 logging.debug(traceback.format_exc())
-                time.sleep(timeout)
-                timeout = min(timeout * 2, 30)
+                
+                # Introduce some randomness to avoid stampeding herds
+                time.sleep(jitter(timeout))
+                
+                # Exponential backoff up to a maximum time
+                timeout = min(timeout * 1.5, 15.0)
     
     thread = threading.Thread(target=routine)
     thread.daemon = True
@@ -110,3 +120,6 @@ def renderTemplate(src, dst, vals):
     # Rename tmpfile to avoid modifying an existing file in place which can
     # cause a process reading it concurrent to read inconsistent data
     os.rename(tmpfile, dst)
+
+def jitter(duration):
+    return duration * (0.75 + random.random() * 0.25)

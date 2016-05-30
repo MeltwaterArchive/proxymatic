@@ -20,7 +20,6 @@ class AggregateBackend(object):
             # Merged updated services into existing ones to keep server backends being reordered
             prev = self._sources.get(source, {})
             next = {}
-            logging.debug("Existing services: %s", services.items())
             for key, service in services.items():
                 if key in prev:
                     next[key] = prev[key].update(service)
@@ -38,12 +37,12 @@ class AggregateBackend(object):
             # Log changes to services and server backends
             for key, service in merged.items():
                 if key not in self._prev:
-                    logging.info("Added: %s", service)
+                    logging.info("Added %s", service)
                 elif self._prev[key] != service:
-                    logging.info("Modified: %s to %s", self._prev[key], service)
+                    logging.info("Modified %s to %s", self._prev[key], service)
             for key, service in self._prev.items():
                 if key not in merged:
-                    logging.info("Removed: %s", service)
+                    logging.info("Removed %s", service)
 
             # Apply config changes
             remaining = dict(merged)

@@ -7,7 +7,6 @@ class HAProxyBackend(object):
         self._prev = {}
         self._cfgfile = '/etc/haproxy/haproxy.cfg'
         self._render({})
-        shell('haproxy -f /etc/haproxy/haproxy.cfg -p /run/haproxy.pid')
 
     def update(self, source, services):
         # HAproxy only supports TCP
@@ -22,7 +21,13 @@ class HAProxyBackend(object):
 
             # Instruct HAproxy to reload the config
             logging.debug("Reloaded the HAproxy config '%s'", self._cfgfile)
-            shell('haproxy -f %s -p /run/haproxy.pid -sf $(cat /run/haproxy.pid)' % self._cfgfile)
+            command = 'haproxy -f %s -p /run/haproxy.pid' % self._cfgfile
+            pidfile = '/run/haproxy.pid'
+            if os.path.exists(pidfile):
+                command += ' -sf ' + open(pidfile).read()
+            shell(command)
+
+            # Remember the services that were rendered
             self._prev = accepted
 
         return accepted
