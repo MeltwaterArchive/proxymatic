@@ -40,6 +40,9 @@ Options:
                         Max number of pen client connections [default: 8192]
   --haproxy             Use HAproxy for TCP services instead of running
                         everything through Pen [default: True]
+  --haproxy-status=HAPROXYSTATUS
+                        Expose the HAproxy health and stats on this ip:port,
+                        e.g. "0.0.0.0:9090"
   --vhost-domain=VHOSTDOMAIN
                         Domain to add service virtual host under, e.g.
                         "services.example.com"
