@@ -58,6 +58,8 @@ parser.add_option('--pen-clients', dest='penclients', help='Max number of connec
 
 parser.add_option('--haproxy', dest='haproxy', help='Use HAproxy for TCP services instead of running everything through Pen [default: %default]',
     action="store_true", default=parsebool(os.environ.get('HAPROXY', True)))
+parser.add_option('--haproxy-status', dest='haproxystatus', help='Expose the HAproxy health and stats on this ip:port, e.g. "0.0.0.0:9090"',
+    default=os.environ.get('HAPROXY_STATUS'))
 
 parser.add_option('--vhost-domain', dest='vhostdomain', help='Domain to add service virtual host under, e.g. "services.example.com"',
     default=os.environ.get('VHOST_DOMAIN', None))
@@ -88,15 +90,16 @@ if options.vhostdomain:
     backend.add(NginxBackend(options.vhostport, options.vhostdomain, options.proxyprotocol, options.maxconnections))
 
 # Option indicates preferance of HAproxy for TCP services
+haproxy = HAProxyBackend(options.maxconnections, options.haproxystatus)
 if options.haproxy:
-    backend.add(HAProxyBackend(options.maxconnections))
+    backend.add(haproxy)
 
 # Pen is needed for UDP support so always add it
 backend.add(PenBackend(options.maxconnections, options.penservers, options.penclients))
 
 # Add the HAproxy backend to handle the Marathon unix socket
 if not options.haproxy:
-    backend.add(HAProxyBackend(options.maxconnections))
+    backend.add(haproxy)
 
 if options.registrator:
     registrator = RegistratorEtcdDiscovery(backend, options.registrator)

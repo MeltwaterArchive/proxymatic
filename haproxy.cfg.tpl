@@ -36,6 +36,21 @@ defaults
   # Timeout for health check
   timeout check    5s
 
+% if statusbind:
+listen stats
+  bind ${statusbind}
+  mode http
+  stats enable
+  stats refresh 5s
+  
+  # Add a health check endpoint for HAproxy itself
+  monitor-uri /_haproxy_health_check
+  
+  # Redirect to the stats URL
+  acl is_root path -i /
+  redirect code 301 location /haproxy?stats if is_root
+% endif
+
 % for service in services.values():
 # ${service.name} (${service.source})
 listen service-${service.portname}

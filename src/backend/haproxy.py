@@ -2,8 +2,9 @@ import logging
 from proxymatic.util import *
 
 class HAProxyBackend(object):
-    def __init__(self, maxconnections):
+    def __init__(self, maxconnections, haproxystatus):
         self._maxconnections = maxconnections
+        self._haproxystatus = haproxystatus
         self._prev = {}
         self._cfgfile = '/etc/haproxy/haproxy.cfg'
         self._render({})
@@ -34,4 +35,7 @@ class HAProxyBackend(object):
 
     def _render(self, accepted):
         # Expand the config template
-        renderTemplate('/etc/haproxy/haproxy.cfg.tpl', self._cfgfile, {'services': accepted, 'maxconnections': self._maxconnections})
+        renderTemplate('/etc/haproxy/haproxy.cfg.tpl', self._cfgfile, {
+            'services': accepted,
+            'maxconnections': self._maxconnections,
+            'statusbind': self._haproxystatus})
