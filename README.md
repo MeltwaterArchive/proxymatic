@@ -5,6 +5,7 @@ The proxymatic image forms one part of a network level service discovery solutio
 
  * **MARATHON_URL** - List of Marathon replicas, e.g. "http://marathon-01:8080/,http://marathon-02:8080/"
  * **REGISTRATOR_URL** - URL where registrator publishes services, e.g. "etcd://localhost:4001/services"
+ * **STATUS_ENDPOINT=0.0.0.0:9090** - Expose /status endpoint and HAproxy stats on this ip:port
  * **REFRESH_INTERVAL=60** - Polling interval when using non-event capable backends. Defaults to 60 seconds.
  * **EXPOSE_HOST=false** - Expose services running in net=host mode. May cause port collisions when this container is also run in net=host mode. Defaults to false.
  * **HAPROXY=true** - Use HAproxy for TCP services instead of running everything through Pen. Defaults to false.
@@ -33,16 +34,19 @@ Options:
   -e, --expose-host     Expose services running in net=host mode. May cause
                         port collisions when this container is also run in
                         net=host mode on the same machine [default: False]
+  --status-endpoint=STATUSENDPOINT
+                        Expose /status endpoint and HAproxy stats on this
+                        ip:port [default: 0.0.0.0:9090]. Specify an empty
+                        string to disable this endpoint
+  --max-connections=MAXCONNECTIONS
+                        Max number of connection per service [default: 8192]
   --pen-servers=PENSERVERS
-                        Max number of backend servers for each pen service
-                        [default: 32]
+                        Max number of backends for each service [default: 64]
   --pen-clients=PENCLIENTS
-                        Max number of pen client connections [default: 8192]
+                        Max number of connection tracked clients [default:
+                        8192]
   --haproxy             Use HAproxy for TCP services instead of running
                         everything through Pen [default: True]
-  --haproxy-status=HAPROXYSTATUS
-                        Expose the HAproxy health and stats on this ip:port,
-                        e.g. "0.0.0.0:9090"
   --vhost-domain=VHOSTDOMAIN
                         Domain to add service virtual host under, e.g.
                         "services.example.com"
@@ -149,6 +153,14 @@ container host. Each service will automatically get a vhost under the app.exampl
 
 ## Deployment
 
+### Graceful Shutdown
+
+The status endpoint which can be used from upstream load balancers to orchestrate graceful restarts
+of the Proxymatic container.
+
+* Check the `--status-endpoint` or `$STATUS_ENDPOINT` setting and point your load balancer to the */status* endpoint.
+* Ensure that the Docker stop timeout `docker stop --time=seconds` is set higher than the drain timeout used in your load balancer.
+
 ### Systemd and CoreOS/Fleet
 
 Create a [Systemd unit](http://www.freedesktop.org/software/systemd/man/systemd.unit.html) file in **/etc/systemd/system/proxymatic.service** with contents like below. Using CoreOS and [Fleet](https://coreos.com/docs/launching-containers/launching/fleet-unit-files/) then add the X-Fleet section to schedule the unit on all cluster nodes.
@@ -168,6 +180,10 @@ Environment=IMAGE=meltwater/proxymatic:latest NAME=proxymatic
 # Allow docker pull to take some time
 TimeoutStartSec=600
 
+# Allow docker stop to account for load balancer draining (must be 
+# longer than the "--time" parameter of docker stop)
+TimeoutStopSec=90
+
 # Restart on failures
 KillMode=none
 Restart=always
@@ -181,7 +197,7 @@ ExecStart=/usr/bin/docker run --net=host \
     -e MARATHON_URL=http://marathon-host:8080 \
     $IMAGE
 
-ExecStop=/usr/bin/docker stop $NAME
+ExecStop=/usr/bin/docker stop --time=60 $NAME
 
 [X-Fleet]
 Global=true
@@ -199,6 +215,9 @@ docker::run_instance:
   'proxymatic':
     image: 'meltwater/proxymatic:latest'
     net: 'host'
+    before_stop: '/usr/bin/docker stop --time=60 proxymatic'
+    extra_systemd_parameters:
+      TimeoutStopSec: 90
     env:
       - "MARATHON_URL=http://marathon-host:8080"
 ```

@@ -36,19 +36,39 @@ defaults
   # Timeout for health check
   timeout check    5s
 
-% if statusbind:
-listen stats
-  bind ${statusbind}
+backend proxymatic
+  # Offload proxymatic health check
+  mode http
+  option httpchk GET /status
+  
+  # Force HAproxy to read the response body to avoid "Broken pipe" errors in Python
+  http-check expect string OK
+
+  # Check Proxymatic status endpoint exposed on the unix socket
+  server proxymatic unix@/tmp/proxymatic-status.sock check fall 3 rise 2 inter 1s
+
+  # Rewrite the /_proxymatic_status url to /status for debugging reasons
+  reqrep ^([^\ :]*)\ /_proxymatic_status(.*)     \1\ /status\2
+  
+% if statusendpoint:
+frontend stats
+  bind ${statusendpoint}
   mode http
   stats enable
   stats refresh 5s
-  
-  # Add a health check endpoint for HAproxy itself
-  monitor-uri /_haproxy_health_check
-  
+
   # Redirect to the stats URL
-  acl is_root path -i /
+  acl is_root path /
   redirect code 301 location /haproxy?stats if is_root
+
+  # Expose the Proxymatic status endpoint for debugging reasons
+  acl proxymatic-status path /_proxymatic_status
+  use_backend proxymatic if proxymatic-status
+
+  # Offload the health check endpoint from proxymatic
+  monitor-uri /status
+  acl proxymatic_dead nbsrv(proxymatic) lt 1
+  monitor fail if proxymatic_dead
 % endif
 
 % for service in services.values():
@@ -62,7 +82,7 @@ listen service-${service.portname}
   balance leastconn
   mode ${'http' if service.application == 'http' else 'tcp'}
 % if service.healthcheck and service.application == 'http':
-  option httpchk get ${service.healthcheckurl}
+  option httpchk GET ${service.healthcheckurl}
 % endif
   default-server inter 15s
 % 	for server, i in zip(service.slots, range(len(service.slots))):

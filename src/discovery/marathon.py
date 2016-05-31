@@ -20,6 +20,7 @@ class MarathonDiscovery(object):
         self._urls = [url.rstrip('/') for url in urls]
         self._socketpath = '/tmp/marathon.sock'
         self._interval = interval
+        self._healthy = False
         self._marathonService = MarathonService()
         self.priority = 10
         
@@ -30,6 +31,9 @@ class MarathonDiscovery(object):
 
         # Ensure the HAproxy load balancer is configured to proxy to the Marathon replicas
         self._connect()
+
+    def isHealthy(self):
+        return self._healthy
 
     def start(self):
         marathon = self
@@ -108,6 +112,9 @@ class MarathonDiscovery(object):
         self._backend.update(self, self._parse(response))
         logging.debug("Refreshed services from Marathon at %s", self._urls)
 
+        # Signal that we're up and running
+        self._healthy = True
+
     def _parse(self, content):
         services = {}
 
@@ -181,4 +188,3 @@ class MarathonDiscovery(object):
                     logging.debug(traceback.format_exc())
         
         return services
-        

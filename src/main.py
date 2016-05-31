@@ -1,13 +1,15 @@
 #!/usr/bin/env python
-import os, sys, optparse, logging, time, subprocess
+import os, sys, signal, optparse, logging, time, subprocess
 from urlparse import urlparse
 from pprint import pprint
+from proxymatic.discovery.aggregate import AggregateDiscovery
 from proxymatic.discovery.marathon import MarathonDiscovery
 from proxymatic.discovery.registrator import RegistratorEtcdDiscovery
 from proxymatic.backend.aggregate import AggregateBackend
 from proxymatic.backend.haproxy import HAProxyBackend
 from proxymatic.backend.nginx import NginxBackend
 from proxymatic.backend.pen import PenBackend
+from proxymatic.status import StatusEndpoint
 
 parser = optparse.OptionParser(
     usage='docker run meltwater/proxymatic:latest [options]...',
@@ -48,6 +50,9 @@ parser.add_option('-i', '--refresh-interval', dest='interval', help='Polling int
 parser.add_option('-e', '--expose-host', dest='exposehost', help='Expose services running in net=host mode. May cause port collisions when this container is also run in net=host mode on the same machine [default: %default]',
     action="store_true", default=parsebool(os.environ.get('EXPOSE_HOST', False)))
 
+parser.add_option('--status-endpoint', dest='statusendpoint', help='Expose /status endpoint and HAproxy stats on this ip:port [default: %default]. Specify an empty string to disable this endpoint',
+    default=os.environ.get('STATUS_ENDPOINT', '0.0.0.0:9090'))
+
 parser.add_option('--max-connections', dest='maxconnections', help='Max number of connection per service [default: %default]',
     type="int", default=parseint(os.environ.get('MAX_CONNECTIONS', '8192')))
 
@@ -58,8 +63,6 @@ parser.add_option('--pen-clients', dest='penclients', help='Max number of connec
 
 parser.add_option('--haproxy', dest='haproxy', help='Use HAproxy for TCP services instead of running everything through Pen [default: %default]',
     action="store_true", default=parsebool(os.environ.get('HAPROXY', True)))
-parser.add_option('--haproxy-status', dest='haproxystatus', help='Expose the HAproxy health and stats on this ip:port, e.g. "0.0.0.0:9090"',
-    default=os.environ.get('HAPROXY_STATUS'))
 
 parser.add_option('--vhost-domain', dest='vhostdomain', help='Domain to add service virtual host under, e.g. "services.example.com"',
     default=os.environ.get('VHOST_DOMAIN', None))
@@ -90,7 +93,7 @@ if options.vhostdomain:
     backend.add(NginxBackend(options.vhostport, options.vhostdomain, options.proxyprotocol, options.maxconnections))
 
 # Option indicates preferance of HAproxy for TCP services
-haproxy = HAProxyBackend(options.maxconnections, options.haproxystatus)
+haproxy = HAProxyBackend(options.maxconnections, options.statusendpoint)
 if options.haproxy:
     backend.add(haproxy)
 
@@ -101,13 +104,27 @@ backend.add(PenBackend(options.maxconnections, options.penservers, options.pencl
 if not options.haproxy:
     backend.add(haproxy)
 
+discovery = AggregateDiscovery()
 if options.registrator:
     registrator = RegistratorEtcdDiscovery(backend, options.registrator)
     registrator.start()
+    discovery.add(registrator)
 
 if options.marathon:
     marathon = MarathonDiscovery(backend, parselist(options.marathon), options.interval)
     marathon.start()
+    discovery.add(marathon)
+
+# Start status endpoints
+status = StatusEndpoint(discovery)
+status.start()
+
+# Trap signals and start failing the status endpoint to allow upstream load balancers to 
+# detect that this Proxymatic instance is stopping.
+def sigterm_handler(_signo, _stack_frame):
+    global status
+    status.terminate()
+signal.signal(signal.SIGTERM, sigterm_handler)
 
 # Loop forever and allow the threads to work. Setting the threads to daemon=False and returning 
 # from the main thread seems to prevent Ctrl+C/SIGTERM from terminating the process properly.
