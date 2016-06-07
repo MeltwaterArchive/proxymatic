@@ -1,4 +1,6 @@
 import logging, os, re, signal, time, threading, traceback, urllib2, httplib, socket, subprocess, random
+from SocketServer import ThreadingMixIn
+from BaseHTTPServer import HTTPServer
 from mako.template import Template
 
 def post(url, data='{}'):
@@ -101,6 +103,14 @@ class UnixHTTPConnection(httplib.HTTPConnection):
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         sock.connect(self.path)
         self.sock = sock
+
+class UnixHTTPServer(ThreadingMixIn, HTTPServer):
+    address_family = socket.AF_UNIX
+
+    def get_request(self):
+        # Client address is expected to be (ip, port) which is not what a unix socket returns
+        request, client_address = HTTPServer.get_request(self)
+        return request, ('127.0.0.1', '0')
 
 def unixresponse(method, socketpath, url, body=None, headers={}):
     conn = UnixHTTPConnection(socketpath)

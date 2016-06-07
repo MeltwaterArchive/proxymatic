@@ -7,8 +7,12 @@ class RegistratorEtcdDiscovery(object):
     def __init__(self, backend, url):
         self._backend = backend
         self._url = urlparse(url)
+        self._healthy = False
         self.priority = 5
         
+    def isHealthy(self):
+        return self._healthy
+
     def start(self):
         def action():
             # Fetch all registered service instances
@@ -19,7 +23,10 @@ class RegistratorEtcdDiscovery(object):
             services = self._parse(response.read())
             self._backend.update(self, services)
             logging.info("Refreshed services from registrator store %s", self._url.geturl())
-            
+
+            # Signal that we're up and running
+            self._healthy = True
+
             # Long poll for updates
             pollurl = 'http://%s/v2/keys%s?wait=true&recursive=true&waitIndex=%s' % (self._url.netloc, self._url.path, waitIndex)
             urllib2.urlopen(pollurl).read()
