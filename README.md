@@ -8,7 +8,7 @@ The proxymatic image forms one part of a network level service discovery solutio
  * **STATUS_ENDPOINT=0.0.0.0:9090** - Expose /status endpoint and HAproxy stats on this ip:port
  * **REFRESH_INTERVAL=60** - Polling interval when using non-event capable backends. Defaults to 60 seconds.
  * **EXPOSE_HOST=false** - Expose services running in net=host mode. May cause port collisions when this container is also run in net=host mode. Defaults to false.
- * **HAPROXY=true** - Use HAproxy for TCP services instead of running everything through Pen. Defaults to false.
+ * **HAPROXY=true** - Use HAproxy for TCP services instead of running everything through Pen. Defaults to true.
  * **VHOST_DOMAIN** - Enables nginx with virtual hosts for each service under this domain, e.g. "services.example.com"
  * **VHOST_PORT=80** - Port to serve virtual hosts from. Defaults to port 80.
  * **PROXY_PROTOCOL=false** - Enable proxy protocol on the nginx vhost which is needed when using the AWS ELB in TCP mode for websocket support.

@@ -2,10 +2,11 @@ import re
 from random import randint
 
 class Server(object):
-    def __init__(self, ip, port):
+    def __init__(self, ip, port, hostname):
         self.ip = ip
         self.port = port
-        
+        self.hostname = hostname
+
     def __cmp__(self, other):
         if not isinstance(other, Server):
             return -1
