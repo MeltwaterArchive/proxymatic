@@ -2,10 +2,11 @@ import re
 from random import randint
 
 class Server(object):
-    def __init__(self, ip, port):
+    def __init__(self, ip, port, hostname):
         self.ip = ip
         self.port = port
-        
+        self.hostname = hostname
+
     def __cmp__(self, other):
         if not isinstance(other, Server):
             return -1
@@ -61,6 +62,16 @@ class Service(object):
     @property
     def portname(self):
         return re.sub('[^a-zA-Z0-9]', '_', str(self.port))
+
+    @property
+    def marathonpath(self):
+        ret = ''
+        for s in self.name.split('.'):
+            if ret is not '':
+                ret = s +'_' + ret
+            else:
+                ret = s
+        return ret
 
     def update(self, other):
         """

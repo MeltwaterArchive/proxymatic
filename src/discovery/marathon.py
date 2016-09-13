@@ -100,7 +100,7 @@ class MarathonDiscovery(object):
 
             # Resolve hostnames since HAproxy wants IP addresses
             ipaddr = socket.gethostbyname(parsed.hostname or '127.0.0.1')
-            server = Server(ipaddr, parsed.port or 80)
+            server = Server(ipaddr, parsed.port or 80, parsed.hostname)
             service._add(server)
 
         self._backend.update(self._marathonService, {self._socketpath: service})
@@ -176,7 +176,7 @@ class MarathonDiscovery(object):
 
                     # Resolve hostnames since HAproxy wants IP addresses
                     ipaddr = socket.gethostbyname(task['host'])
-                    server = Server(ipaddr, exposedPort)
+                    server = Server(ipaddr, exposedPort, task['host'])
                     
                     # Append backend to service
                     if key not in services:

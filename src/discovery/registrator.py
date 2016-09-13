@@ -50,7 +50,7 @@ class RegistratorEtcdDiscovery(object):
                     # Resolve hostnames since HAproxy wants IP addresses
                     endpoint = backend['value'].split(':')
                     ipaddr = socket.gethostbyname(endpoint[0])
-                    server = Server(ipaddr, endpoint[1])
+                    server = Server(ipaddr, endpoint[1], endpoint[0])
             
                     # Append backend to service
                     if key not in services:

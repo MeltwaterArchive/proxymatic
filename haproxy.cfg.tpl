@@ -73,7 +73,7 @@ frontend stats
 
 % for service in services.values():
 # ${service.name} (${service.source})
-listen service-${service.portname}
+listen ${service.marathonpath}-${service.portname}
 % if service.protocol == 'unix':
   bind unix@${service.port}
 % else:
@@ -85,9 +85,9 @@ listen service-${service.portname}
   option httpchk GET ${service.healthcheckurl}
 % endif
   default-server inter 15s
-% 	for server, i in zip(service.slots, range(len(service.slots))):
+% 	for server in service.slots:
 %     if server:
-  server backend-${service.portname}-${i} ${server.ip}:${server.port}${' check' if service.healthcheck else ''}
+  server backend-${server.hostname}-${server.port} ${server.ip}:${server.port}${' check' if service.healthcheck else ''}
 %     endif
 % 	endfor  
 
