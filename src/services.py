@@ -63,6 +63,16 @@ class Service(object):
     def portname(self):
         return re.sub('[^a-zA-Z0-9]', '_', str(self.port))
 
+    @property
+    def marathonpath(self):
+        ret = ''
+        for s in self.name.split('.'):
+            if ret is not '':
+                ret = s +'_' + ret
+            else:
+                ret = s
+        return ret
+
     def update(self, other):
         """
         Returns an new updated Service object

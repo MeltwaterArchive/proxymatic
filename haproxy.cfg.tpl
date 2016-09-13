@@ -73,7 +73,7 @@ frontend stats
 
 % for service in services.values():
 # ${service.name} (${service.source})
-listen ${service.name}-${service.portname}
+listen ${service.marathonpath}-${service.portname}
 % if service.protocol == 'unix':
   bind unix@${service.port}
 % else:
