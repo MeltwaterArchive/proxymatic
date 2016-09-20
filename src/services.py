@@ -68,7 +68,7 @@ class Service(object):
         ret = ''
         for s in self.name.split('.'):
             if ret is not '':
-                ret = s +'_' + ret
+                ret = s +'.' + ret
             else:
                 ret = s
         return ret
