@@ -142,6 +142,11 @@ class MarathonDiscovery(object):
             servicePorts = task.get('servicePorts', [])
             seenServicePorts = set()
 
+            # Skip tasks that are being killed
+            if task.get('state') == 'TASK_KILLING':
+                logging.debug("Skipping task %s as it's currently being killed", task.get('id'))
+                continue
+
             for servicePort, portIndex in zip(servicePorts, range(len(servicePorts))):
                 protocol = 'tcp'
                 key = '%s/%s' % (servicePort, protocol.lower())
