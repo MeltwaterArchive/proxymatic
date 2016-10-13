@@ -9,7 +9,7 @@ from proxymatic.services import Server, Service
 from proxymatic import util
 
 @lru_cache(maxsize=1024)
-def _getAppVersion(socketpath, appid, version):
+def getAppVersion(socketpath, appid, version):
     path = '/v2/apps/%s/versions/%s' % (appid.strip('/'), version)
     response = util.unixrequest('GET', socketpath, path, None, {'Accept': 'application/json'})
     return json.loads(response)
@@ -119,6 +119,38 @@ class MarathonDiscovery(object):
         # Signal that we're up and running
         self._healthy = True
 
+    def _applyServicePortOverrides(self, taskConfig, servicePorts):
+        ports = list(servicePorts)
+
+        for portIndex in range(len(ports)):
+            overrideKey = 'com.meltwater.proxymatic.port.%d.servicePort' % portIndex
+            overridePort = util.rget(taskConfig, 'labels', overrideKey)
+            if overridePort is not None:
+                if str(overridePort).isdigit():
+                    ports[portIndex] = int(overridePort)
+                else:
+                    logging.warn("Port override %s for task %s is not numeric ", overrideKey, taskConfig.get('id'))
+
+        return ports
+
+    def _applyBackendWeight(self, taskConfig, portIndex, server):
+        weightKey = 'com.meltwater.proxymatic.port.%d.weight' % portIndex
+        taskWeight = util.rget(taskConfig, 'labels', weightKey)
+        if taskWeight is not None:
+            if str(taskWeight).isdigit():
+                server.weight = int(taskWeight)
+            else:
+                logging.warn("Weight %s=%s for task %s is not numeric ", weightKey, taskWeight, taskConfig.get('id'))
+
+    def _applyLoadBalancerMode(self, taskConfig, portIndex, service):
+        modeKey = 'com.meltwater.proxymatic.port.%d.mode' % portIndex
+        mode = util.rget(taskConfig, 'labels', modeKey)
+        if mode is not None:
+            if mode in ('tcp', 'http'):
+                service.application = mode
+            else:
+                logging.warn("Load balancer connection mode %s=%s for task %s is not in [tcp, http]", modeKey, mode, taskConfig.get('id'))
+
     def _parse(self, content):
         services = {}
 
@@ -140,11 +172,14 @@ class MarathonDiscovery(object):
 
         for task in document.get('tasks', []):
             # Fetch exact config for this app version
-            taskConfig = _getAppVersion(self._socketpath, task.get('appId'), task.get('version'))
+            taskConfig = getAppVersion(self._socketpath, task.get('appId'), task.get('version'))
 
             exposedPorts = task.get('ports', [])
             servicePorts = task.get('servicePorts', [])
             seenServicePorts = set()
+
+            # Apply servicePort overrides
+            servicePorts = self._applyServicePortOverrides(taskConfig, servicePorts)
 
             # Skip tasks that are being killed
             if task.get('state') == 'TASK_KILLING':
@@ -187,11 +222,18 @@ class MarathonDiscovery(object):
                     ipaddr = socket.gethostbyname(task['host'])
                     server = Server(ipaddr, exposedPort, task['host'])
 
+                    # Set backend weight
+                    self._applyBackendWeight(taskConfig, portIndex, server)
+
                     # Append backend to service
                     if key not in services:
                         name = '.'.join(reversed(filter(bool, task['appId'].split('/'))))
                         services[key] = Service(name, 'marathon:%s' % self._urls, servicePort, protocol)
                     services[key]._add(server)
+
+                    # Set load balancer protocol mode
+                    self._applyLoadBalancerMode(taskConfig, portIndex, services[key])
+
                 except Exception as e:
                     logging.warn("Failed parse service %s backend %s: %s", task.get('appId', ''), task.get('id', ''), str(e))
                     logging.debug(traceback.format_exc())

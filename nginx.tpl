@@ -104,8 +104,9 @@ http {
     % for service in services.values():
     # ${service.name} (${service.source})
     upstream ${service.name}.${domain} {
+      least_conn;
     %   for server in service.servers:
-      server ${server.ip}:${server.port};
+      server ${server.ip}:${server.port} weight=${server.weight};
     %   endfor
     }
 

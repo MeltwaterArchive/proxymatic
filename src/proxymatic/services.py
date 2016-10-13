@@ -1,4 +1,5 @@
 import re
+from copy import copy
 from random import randint
 
 class Server(object):
@@ -6,6 +7,7 @@ class Server(object):
         self.ip = ip
         self.port = port
         self.hostname = hostname
+        self.weight = 500
 
     def __cmp__(self, other):
         if not isinstance(other, Server):
@@ -16,10 +18,21 @@ class Server(object):
         return hash((self.ip, self.port))
 
     def __str__(self):
-        return '%s:%s' % (self.ip, self.port)
+        result = '%s:%s' % (self.ip, self.port)
+        if self.weight != 500:
+            result += "(%d)" % self.weight
+        return result
 
     def __repr__(self):
-        return 'Server(%s, %s)' % (repr(self.ip), repr(self.port))
+        return 'Server(%s, %s, %s)' % (repr(self.ip), repr(self.port), repr(self.weight))
+
+    def clone(self):
+        return copy(self)
+
+    def setWeight(self, weight):
+        clone = self.clone()
+        clone.weight = weight
+        return clone
 
 class Service(object):
     def __init__(self, name, source, port, protocol, application='binary', healthcheck=False, healthcheckurl='/'):
@@ -46,10 +59,12 @@ class Service(object):
         return clone
 
     def __str__(self):
-        return '%s:%s/%s -> [%s]' % (self.name, self.port, self.protocol, ', '.join([str(s) for s in self.servers]))
+        return '%s:%s/%s -> [%s]' % (
+            self.name, self.port, self.application if self.application != 'binary' else self.protocol,
+            ', '.join([str(s) for s in self.servers]))
 
     def __repr__(self):
-        return 'Service(%s, %s, %s, %s)' % (repr(self.name), repr(self.port), repr(self.protocol), repr(self.servers))
+        return 'Service(%s, %s, %s, %s, %s)' % (repr(self.name), repr(self.port), repr(self.protocol), repr(self.application), repr(self.servers))
 
     def __cmp__(self, other):
         if not isinstance(other, Service):
@@ -94,6 +109,11 @@ class Service(object):
     def addServer(self, server):
         clone = self.clone()
         clone._add(server)
+        return clone
+
+    def setApplication(self, application):
+        clone = self.clone()
+        clone.application = application
         return clone
 
     def _add(self, server):

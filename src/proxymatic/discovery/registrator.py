@@ -42,8 +42,8 @@ class RegistratorEtcdDiscovery(object):
         services = {}
         state = json.loads(content)
 
-        for node in util.rget(state, 'node', 'nodes'):
-            for backend in util.rget(node, 'nodes'):
+        for node in util.rget(state, 'node', 'nodes') or []:
+            for backend in util.rget(node, 'nodes') or []:
                 try:
                     parts = backend['key'].split(':')
                     port = int(parts[2])

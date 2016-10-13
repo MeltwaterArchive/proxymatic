@@ -140,13 +140,17 @@ def unixrequest(method, socketpath, url, body=None, headers={}):
 def renderTemplate(src, dst, vals):
     template = Template(filename=src)
     config = template.render(**vals)
-    tmpfile = "%s.tmp" % dst
-    with open(tmpfile, 'w') as f:
-        f.write(config)
 
-    # Rename tmpfile to avoid modifying an existing file in place which can
-    # cause a process reading it concurrent to read inconsistent data
-    os.rename(tmpfile, dst)
+    if dst != '/dev/null':
+        tmpfile = "%s.tmp" % dst
+        with open(tmpfile, 'w') as f:
+            f.write(config)
+
+        # Rename tmpfile to avoid modifying an existing file in place which can
+        # cause a process reading it concurrent to read inconsistent data
+        os.rename(tmpfile, dst)
+
+    return config
 
 def jitter(duration):
     return duration * (0.75 + random.random() * 0.25)

@@ -1,0 +1,35 @@
+{
+  "id": "/demo/webapp",
+  "ports": [
+    1234
+  ],
+  "portDefinitions": [
+    {
+      "port": 1234,
+      "protocol": "tcp",
+      "labels": {}
+    }
+  ],
+  "healthChecks": [
+    {
+      "path": "/_status",
+      "protocol": "HTTP",
+      "portIndex": 0,
+      "gracePeriodSeconds": 150,
+      "intervalSeconds": 15,
+      "timeoutSeconds": 5,
+      "maxConsecutiveFailures": 3,
+      "ignoreHttp1xx": false
+    }
+  ],
+  "readinessChecks": [],
+  "dependencies": [],
+  "upgradeStrategy": {
+    "minimumHealthCapacity": 1,
+    "maximumOverCapacity": 1
+  },
+  "labels": {
+  },
+  "ipAddress": null,
+  "version": "2016-10-04T12:48:17.435Z"
+}

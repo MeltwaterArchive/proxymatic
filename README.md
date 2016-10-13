@@ -154,6 +154,24 @@ container host. Each service will automatically get a vhost under the app.exampl
 | http://myservice.app.example.com | myservice | myservice |
 | http://service.system.product.app.example.com | /product/system/service | service.system.product |
 
+## Application Settings
+
+Applications may set Marathon labels to override load balancer settings for each of their ports, where N = 0..number-of-exposed-ports. For example
+
+```
+  "labels": {
+    "com.meltwater.proxymatic.0.servicePort": "1234",
+    "com.meltwater.proxymatic.0.weight": "100",
+    "com.meltwater.proxymatic.0.mode": "http"
+  }
+```
+
+| Label   |  |
+| :----------------- | :---------- |
+| com.meltwater.proxymatic.&lt;N&gt;.servicePort | Override the service port for this exposed container port |
+| com.meltwater.proxymatic.&lt;N&gt;.weight | Specify the load balancer weight for this port in the range `1-1000`. Default value is `500`. |
+| com.meltwater.proxymatic.&lt;N&gt;.mode | Specify the load balancer mode for this port as either `tcp` or `http`. Default is `tcp` mode. |
+
 ## Deployment
 
 ### Graceful Shutdown

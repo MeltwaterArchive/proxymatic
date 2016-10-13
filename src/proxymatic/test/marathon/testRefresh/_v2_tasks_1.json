@@ -1,0 +1,40 @@
+{
+  "tasks": [
+    {
+      "id": "demo_webapp.d35bf0f3-8a30-11e6-a4fe-dec283d23ff6",
+      "host": "localhost",
+      "ports": [
+        31478
+      ],
+      "version": "2016-10-04T12:48:17.435Z",
+      "appId": "/demo/webapp",
+      "servicePorts": [
+        1234
+      ],
+      "healthCheckResults": [
+        {
+          "alive": true,
+          "consecutiveFailures": 0
+        }
+      ]
+    },
+    {
+      "id": "demo_webapp.e35bf0f3-8a30-11e6-a4fe-dec283d23ff6",
+      "host": "localhost",
+      "ports": [
+        31479
+      ],
+      "version": "2016-10-04T12:48:17.435Z",
+      "appId": "/demo/webapp",
+      "servicePorts": [
+        1234
+      ],
+      "healthCheckResults": [
+        {
+          "alive": true,
+          "consecutiveFailures": 0
+        }
+      ]
+    }    
+  ]
+}
