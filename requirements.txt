@@ -1,1 +1,1 @@
-cachetools
+cachetools<2.0
