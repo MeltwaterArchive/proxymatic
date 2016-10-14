@@ -1,4 +1,7 @@
 # Proxymatic
+[![Travis CI](https://img.shields.io/travis/meltwater/proxymatic/master.svg)](https://travis-ci.org/meltwater/proxymatic)
+[![Coverage Status](https://codecov.io/github/meltwater/proxymatic/coverage.svg?branch=master)](https://codecov.io/github/meltwater/proxymatic?branch=master&view=all)
+
 The proxymatic image forms one part of a network level service discovery solution. It dynamically configures proxies that forward network connections to the host where a service is currently running. By subscribing to events from discovery sources such as [Marathon](https://github.com/mesosphere/marathon) or [registrator](https://github.com/gliderlabs/registrator) the proxies can quickly be updated whenever a service is scaled or fails over.
 
 ## Environment Variables

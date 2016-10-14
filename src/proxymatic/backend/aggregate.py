@@ -1,4 +1,5 @@
-import logging, threading
+import logging
+import threading
 
 class AggregateBackend(object):
     def __init__(self, exposehost):
@@ -7,7 +8,7 @@ class AggregateBackend(object):
         self._sources = {}
         self._lock = threading.RLock()
         self._prev = {}
-    
+
     def add(self, backend):
         self._backends.append(backend)
 
@@ -26,10 +27,10 @@ class AggregateBackend(object):
                 else:
                     next[key] = service
             self._sources[source] = next
-            
+
             # Merge services from multiple sources in source priority order (Marathon has precedence)
             merged = {}
-            for source, chunk in sorted(self._sources.items(), cmp=lambda a,b: cmp(a[0].priority, b[0].priority)):
+            for source, chunk in sorted(self._sources.items(), cmp=lambda a, b: cmp(a[0].priority, b[0].priority)):
                 for key, service in chunk.items():
                     if self._accepts(service):
                         merged[key] = service
@@ -53,11 +54,11 @@ class AggregateBackend(object):
 
             # Remember the state until next update
             self._prev = merged
-                
+
     def _accepts(self, service):
         # Filter services running in net=host mode
         for server in service.servers:
             if not self._exposehost and server.port == str(service.port):
                 return False
-        
+
         return True

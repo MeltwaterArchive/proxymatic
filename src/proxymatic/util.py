@@ -1,4 +1,15 @@
-import logging, os, re, signal, time, threading, traceback, urllib2, httplib, socket, subprocess, random
+import logging
+import os
+import re
+import signal
+import time
+import threading
+import traceback
+import urllib2
+import httplib
+import socket
+import subprocess
+import random
 from SocketServer import ThreadingMixIn
 from BaseHTTPServer import HTTPServer
 from mako.template import Template
@@ -16,10 +27,16 @@ def delete(url):
 
 def rget(root, *args):
     node = root
-    for arg in args:
-        node = node.get(arg, {})
+    default = {}
+    for arg, i in zip(args, range(len(args))):
+        if i + 1 >= len(args):
+            default = None
+        if isinstance(node, (list, tuple)):
+            node = node[arg] if (arg >= 0 and arg < len(node)) else default
+        else:
+            node = node.get(arg, default)
     return node
-    
+
 def mangle(key):
     return re.sub('[^a-zA-Z0-9]+', '_', re.sub('^[^a-zA-Z0-9]+', '', key))
 
@@ -53,7 +70,7 @@ def kill(pidfile, sig=signal.SIGKILL):
         return True
     except IOError:
         logging.debug("PID file '%s' doesn't exist", pidfile)
-    except Exception, e:
+    except Exception as e:
         logging.warn("Failed to send signal '%s' to '%s' with PID %s: %s", sig, name, pid, str(e))
         logging.debug(traceback.format_exc())
     return False
@@ -70,20 +87,20 @@ def run(action, errormsg="Connection error: %s", graceperiod=0):
             try:
                 action()
                 timeout = 1.0
-            except Exception, e:
+            except Exception as e:
                 # Don't warn for startup errors when graceperiod is set
                 if starttime + graceperiod <= time.time():
                     logging.warn(errormsg, str(e))
                 else:
                     logging.debug(errormsg, str(e))
                 logging.debug(traceback.format_exc())
-                
+
                 # Introduce some randomness to avoid stampeding herds
                 time.sleep(jitter(timeout))
-                
+
                 # Exponential backoff up to a maximum time
                 timeout = min(timeout * 1.5, 15.0)
-    
+
     thread = threading.Thread(target=routine)
     thread.daemon = True
     thread.start()
@@ -98,7 +115,7 @@ class UnixHTTPConnection(httplib.HTTPConnection):
     def __init__(self, path):
         httplib.HTTPConnection.__init__(self, 'localhost')
         self.path = path
- 
+
     def connect(self):
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         sock.connect(self.path)
