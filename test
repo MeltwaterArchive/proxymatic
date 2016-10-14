@@ -1,3 +1,4 @@
+<<<<<<< 416d1c43925205112b55d6e89619953137229bc7
 #!/bin/sh
 set -e -x
 
@@ -12,4 +13,20 @@ if [ "$TRAVIS_TAG" == "" ] && [ "$TRAVIS_OS_NAME" == "linux" ]; then
     coverage run "proxymatic/test.py" $@
 else
     python "proxymatic/test.py" $@
+=======
+#!/bin/bash
+set -e -x
+
+cd "`dirname $0`"
+export PYTHONPATH=".:`pwd`/src"
+
+echo "==> Static Code Analysis for PEP8 style guide and various errors"
+flake8 --statistics --count src/
+
+if [ "$TRAVIS_TAG" == "" ] && [ "$TRAVIS_OS_NAME" == "linux" ]; then
+    echo "==> Executing tests with code coverage collection"
+    coverage run "src/proxymatic/test.py" $@
+else
+    python "src/proxymatic/test.py" $@
+>>>>>>> Formatted to PEP8 and added test harness
 fi
