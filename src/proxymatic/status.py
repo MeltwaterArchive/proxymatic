@@ -1,7 +1,6 @@
 import logging
-from urlparse import urlparse
 from BaseHTTPServer import BaseHTTPRequestHandler
-from proxymatic.util import *
+from proxymatic import util
 
 class StatusEndpoint(object):
     def __init__(self, source):
@@ -31,8 +30,8 @@ class StatusEndpoint(object):
                 # Ignore request logging for status checks
                 pass
 
-        server = UnixHTTPServer('/tmp/proxymatic-status.sock', RequestHandler)
-        run(server.serve_forever, "Error serving HTTP status endpoint")
+        server = util.UnixHTTPServer('/tmp/proxymatic-status.sock', RequestHandler)
+        util.run(server.serve_forever, "Error serving HTTP status endpoint")
         logging.debug("Enabled /status endpoint on /tmp/proxymatic-status.sock")
 
     def terminate(self):

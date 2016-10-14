@@ -1,0 +1,15 @@
+#!/bin/sh
+set -e -x
+
+cd "`dirname $0`/src"
+export PYTHONPATH=".:`pwd`"
+
+echo "==> Static Code Analysis for PEP8 style guide and various errors"
+flake8 --statistics --count .
+
+if [ "$TRAVIS_TAG" == "" ] && [ "$TRAVIS_OS_NAME" == "linux" ]; then
+    echo "==> Executing tests with code coverage collection"
+    coverage run "proxymatic/test.py" $@
+else
+    python "proxymatic/test.py" $@
+fi

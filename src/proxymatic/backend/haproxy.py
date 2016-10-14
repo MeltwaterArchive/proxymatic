@@ -1,5 +1,6 @@
+import os
 import logging
-from proxymatic.util import *
+from proxymatic import util
 
 class HAProxyBackend(object):
     def __init__(self, maxconnections, statusendpoint):
@@ -15,7 +16,7 @@ class HAProxyBackend(object):
         for key, service in services.items():
             if service.protocol == 'tcp' or service.protocol == 'unix':
                 accepted[key] = service
-        
+
         # Check if anything has changed
         if self._prev != accepted:
             self._render(accepted)
@@ -26,7 +27,7 @@ class HAProxyBackend(object):
             pidfile = '/run/haproxy.pid'
             if os.path.exists(pidfile):
                 command += ' -sf ' + open(pidfile).read()
-            shell(command)
+            util.shell(command)
 
             # Remember the services that were rendered
             self._prev = accepted
@@ -35,7 +36,7 @@ class HAProxyBackend(object):
 
     def _render(self, accepted):
         # Expand the config template
-        renderTemplate('/etc/haproxy/haproxy.cfg.tpl', self._cfgfile, {
+        util.renderTemplate('/etc/haproxy/haproxy.cfg.tpl', self._cfgfile, {
             'services': accepted,
             'maxconnections': self._maxconnections,
             'statusendpoint': self._statusendpoint})

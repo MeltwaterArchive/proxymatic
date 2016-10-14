@@ -1,7 +1,10 @@
 #!/usr/bin/env python
-import os, sys, signal, optparse, logging, time, subprocess
-from urlparse import urlparse
-from pprint import pprint
+import os
+import sys
+import signal
+import optparse
+import logging
+import time
 from proxymatic.discovery.aggregate import AggregateDiscovery
 from proxymatic.discovery.marathon import MarathonDiscovery
 from proxymatic.discovery.registrator import RegistratorEtcdDiscovery
@@ -23,7 +26,7 @@ def parsebool(value):
         return True
     if stripped in falsevals:
         return False
-    
+
     logging.error("Invalid boolean value '%s'", value)
     sys.exit(1)
 
@@ -36,43 +39,49 @@ def parseint(value):
 
 def parselist(value):
     return filter(bool, value.split(','))
-        
+
 parser.add_option('-m', '--marathon', dest='marathon', help='List of Marathon replicas, e.g. "http://marathon-01:8080/,http://marathon-02:8080/"',
-    default=os.environ.get('MARATHON_URL', ''))
-parser.add_option('-c', '--marathon-callback', dest='callback', help='[DEPRECATED] URL to listen for Marathon HTTP callbacks, e.g. "http://`hostname -f`:5090/"',
-    default=os.environ.get('MARATHON_CALLBACK_URL', None))
-    
-parser.add_option('-r', '--registrator', dest='registrator', help='URL where registrator publishes services, e.g. "etcd://etcd-host:4001/services"',
-    default=os.environ.get('REGISTRATOR_URL', None))
+                  default=os.environ.get('MARATHON_URL', ''))
+parser.add_option('-c', '--marathon-callback', dest='callback',
+                  help='[DEPRECATED] URL to listen for Marathon HTTP callbacks, e.g. "http://`hostname -f`:5090/"',
+                  default=os.environ.get('MARATHON_CALLBACK_URL', None))
 
-parser.add_option('-i', '--refresh-interval', dest='interval', help='Polling interval in seconds when using non-event capable backends [default: %default]',
-    type="int", default=parseint(os.environ.get('REFRESH_INTERVAL', '60')))
-parser.add_option('-e', '--expose-host', dest='exposehost', help='Expose services running in net=host mode. May cause port collisions when this container is also run in net=host mode on the same machine [default: %default]',
-    action="store_true", default=parsebool(os.environ.get('EXPOSE_HOST', False)))
+parser.add_option('-r', '--registrator', dest='registrator',
+                  help='URL where registrator publishes services, e.g. "etcd://etcd-host:4001/services"',
+                  default=os.environ.get('REGISTRATOR_URL', None))
 
-parser.add_option('--status-endpoint', dest='statusendpoint', help='Expose /status endpoint and HAproxy stats on this ip:port [default: %default]. Specify an empty string to disable this endpoint',
-    default=os.environ.get('STATUS_ENDPOINT', '0.0.0.0:9090'))
+parser.add_option('-i', '--refresh-interval', dest='interval',
+                  help='Polling interval in seconds when using non-event capable backends [default: %default]',
+                  type="int", default=parseint(os.environ.get('REFRESH_INTERVAL', '60')))
+parser.add_option('-e', '--expose-host', dest='exposehost',
+                  help='Expose services running in net=host mode [default: %default]',
+                  action="store_true", default=parsebool(os.environ.get('EXPOSE_HOST', False)))
 
-parser.add_option('--max-connections', dest='maxconnections', help='Max number of connection per service [default: %default]',
-    type="int", default=parseint(os.environ.get('MAX_CONNECTIONS', '8192')))
+parser.add_option('--status-endpoint', dest='statusendpoint',
+                  help='Expose /status endpoint and HAproxy stats on this ip:port [default: %default]. Specify an empty string to disable this endpoint',
+                  default=os.environ.get('STATUS_ENDPOINT', '0.0.0.0:9090'))
+
+parser.add_option('--max-connections', dest='maxconnections',
+                  help='Max number of connection per service [default: %default]',
+                  type="int", default=parseint(os.environ.get('MAX_CONNECTIONS', '8192')))
 
 parser.add_option('--pen-servers', dest='penservers', help='Max number of backends for each service [default: %default]',
-    type="int", default=parseint(os.environ.get('PEN_SERVERS', '64')))
+                  type="int", default=parseint(os.environ.get('PEN_SERVERS', '64')))
 parser.add_option('--pen-clients', dest='penclients', help='Max number of connection tracked clients [default: %default]',
-    type="int", default=parseint(os.environ.get('PEN_CLIENTS', '8192')))
+                  type="int", default=parseint(os.environ.get('PEN_CLIENTS', '8192')))
 
 parser.add_option('--haproxy', dest='haproxy', help='Use HAproxy for TCP services instead of running everything through Pen [default: %default]',
-    action="store_true", default=parsebool(os.environ.get('HAPROXY', True)))
+                  action="store_true", default=parsebool(os.environ.get('HAPROXY', True)))
 
 parser.add_option('--vhost-domain', dest='vhostdomain', help='Domain to add service virtual host under, e.g. "services.example.com"',
-    default=os.environ.get('VHOST_DOMAIN', None))
+                  default=os.environ.get('VHOST_DOMAIN', None))
 parser.add_option('--vhost-port', dest='vhostport', help='Port to serve virtual hosts from [default: %default]"',
-    type="int", default=parseint(os.environ.get('VHOST_PORT', '80')))
+                  type="int", default=parseint(os.environ.get('VHOST_PORT', '80')))
 parser.add_option('--proxy-protocol', dest='proxyprotocol', help='Enable proxy protocol on the nginx vhost [default: %default]',
-    action="store_true", default=parsebool(os.environ.get('PROXY_PROTOCOL', False)))
+                  action="store_true", default=parsebool(os.environ.get('PROXY_PROTOCOL', False)))
 
 parser.add_option('-v', '--verbose', dest='verbose', help='Increase logging verbosity',
-    action="store_true", default=parsebool(os.environ.get('VERBOSE', False)))
+                  action="store_true", default=parsebool(os.environ.get('VERBOSE', False)))
 
 (options, args) = parser.parse_args()
 
@@ -119,14 +128,14 @@ if options.marathon:
 status = StatusEndpoint(discovery)
 status.start()
 
-# Trap signals and start failing the status endpoint to allow upstream load balancers to 
+# Trap signals and start failing the status endpoint to allow upstream load balancers to
 # detect that this Proxymatic instance is stopping.
 def sigterm_handler(_signo, _stack_frame):
     global status
     status.terminate()
 signal.signal(signal.SIGTERM, sigterm_handler)
 
-# Loop forever and allow the threads to work. Setting the threads to daemon=False and returning 
+# Loop forever and allow the threads to work. Setting the threads to daemon=False and returning
 # from the main thread seems to prevent Ctrl+C/SIGTERM from terminating the process properly.
 while True:
     time.sleep(60)
