@@ -1,8 +1,4 @@
-<<<<<<< 416d1c43925205112b55d6e89619953137229bc7
-#!/bin/sh
-=======
 #!/bin/bash
->>>>>>> Formatted to PEP8 and added test harness
 set -e -x
 
 cd "`dirname $0`"

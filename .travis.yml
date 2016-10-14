@@ -5,11 +5,7 @@ python:
 install: "pip install -r requirements.txt"
 script: "make"
 
-<<<<<<< 416d1c43925205112b55d6e89619953137229bc7
-# Code coverage for master branch using https://codecov.io/github/mikljohansson/secretary
-=======
 # Code coverage for master branch using https://codecov.io/github/meltwater/proxymatic
->>>>>>> Formatted to PEP8 and added test harness
 before_install:
   - if [ "$TRAVIS_TAG" == "" ] && [ "$TRAVIS_OS_NAME" == "linux" ]; then pip install codecov; fi
 after_success:
