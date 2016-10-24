@@ -15,6 +15,7 @@ The proxymatic image forms one part of a network level service discovery solutio
  * **VHOST_DOMAIN** - Enables nginx with virtual hosts for each service under this domain, e.g. "services.example.com"
  * **VHOST_PORT=80** - Port to serve virtual hosts from. Defaults to port 80.
  * **PROXY_PROTOCOL=false** - Enable proxy protocol on the nginx vhost which is needed when using the AWS ELB in TCP mode for websocket support.
+ * **GROUP_SIZE=1** - Number of Proxymatic instances serving this cluster. Per container connection limits are divided by this number to ensure a globally coordinated maxconn per container.
 
 ## Command Line Usage
 
@@ -34,13 +35,17 @@ Options:
   -i INTERVAL, --refresh-interval=INTERVAL
                         Polling interval in seconds when using non-event
                         capable backends [default: 60]
-  -e, --expose-host     Expose services running in net=host mode. May cause
-                        port collisions when this container is also run in
-                        net=host mode on the same machine [default: False]
+  -e, --expose-host     Expose services running in net=host mode [default:
+                        False]
   --status-endpoint=STATUSENDPOINT
                         Expose /status endpoint and HAproxy stats on this
                         ip:port [default: 0.0.0.0:9090]. Specify an empty
                         string to disable this endpoint
+  --group-size=GROUPSIZE
+                        Number of Proxymatic instances serving this cluster.
+                        Per container connection limits are divided by this
+                        number to ensure a globally coordinated maxconn per
+                        container [default: 1]
   --max-connections=MAXCONNECTIONS
                         Max number of connection per service [default: 8192]
   --pen-servers=PENSERVERS

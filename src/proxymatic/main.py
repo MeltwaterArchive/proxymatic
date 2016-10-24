@@ -61,6 +61,11 @@ parser.add_option('--status-endpoint', dest='statusendpoint',
                   help='Expose /status endpoint and HAproxy stats on this ip:port [default: %default]. Specify an empty string to disable this endpoint',
                   default=os.environ.get('STATUS_ENDPOINT', '0.0.0.0:9090'))
 
+parser.add_option('--group-size', dest='groupsize',
+                  help='Number of Proxymatic instances serving this cluster. Per container connection ' +
+                       'limits are divided by this number to ensure a globally coordinated maxconn per container [default: %default]',
+                  type="int", default=parseint(os.environ.get('GROUP_SIZE', '1')))
+
 parser.add_option('--max-connections', dest='maxconnections',
                   help='Max number of connection per service [default: %default]',
                   type="int", default=parseint(os.environ.get('MAX_CONNECTIONS', '8192')))
@@ -120,7 +125,7 @@ if options.registrator:
     discovery.add(registrator)
 
 if options.marathon:
-    marathon = MarathonDiscovery(backend, parselist(options.marathon), options.interval)
+    marathon = MarathonDiscovery(backend, parselist(options.marathon), options.interval, options.groupsize)
     marathon.start()
     discovery.add(marathon)
 

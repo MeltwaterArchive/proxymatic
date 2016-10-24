@@ -19,11 +19,12 @@ class MarathonService(object):
         self.priority = 100
 
 class MarathonDiscovery(object):
-    def __init__(self, backend, urls, interval):
+    def __init__(self, backend, urls, interval, groupsize=1):
         self._backend = backend
         self._urls = [url.rstrip('/') for url in urls]
         self._socketpath = '/tmp/marathon.sock'
         self._interval = interval
+        self._groupsize = groupsize
         self._healthy = False
         self._marathonService = MarathonService()
         self.priority = 10
@@ -133,12 +134,12 @@ class MarathonDiscovery(object):
 
         return ports
 
-    def _applyBackendAttributeInt(self, attribute, taskConfig, portIndex, server):
+    def _applyBackendAttributeInt(self, attribute, taskConfig, portIndex, server, divisor=1):
         attribKey = 'com.meltwater.proxymatic.port.%d.%s' % (portIndex, attribute)
         attribValue = util.rget(taskConfig, 'labels', attribKey)
         if attribValue is not None:
             if str(attribValue).isdigit():
-                setattr(server, attribute, int(attribValue))
+                setattr(server, attribute, int(attribValue) / divisor)
             else:
                 logging.warn("Weight %s=%s for task %s is not numeric ", attribKey, attribValue, taskConfig.get('id'))
 
@@ -224,7 +225,7 @@ class MarathonDiscovery(object):
 
                     # Set backend load balancer options
                     self._applyBackendAttributeInt('weight', taskConfig, portIndex, server)
-                    self._applyBackendAttributeInt('maxconn', taskConfig, portIndex, server)
+                    self._applyBackendAttributeInt('maxconn', taskConfig, portIndex, server, self._groupsize)
 
                     # Append backend to service
                     if key not in services:
