@@ -8,23 +8,30 @@ class Server(object):
         self.port = port
         self.hostname = hostname
         self.weight = 500
+        self.maxconn = None
 
     def __cmp__(self, other):
         if not isinstance(other, Server):
             return -1
-        return cmp((self.ip, self.port), (other.ip, other.port))
+        return cmp((self.ip, self.port, self.weight, self.maxconn), (other.ip, other.port, other.weight, other.maxconn))
 
     def __hash__(self):
-        return hash((self.ip, self.port))
+        return hash((self.ip, self.port, self.weight, self.maxconn))
 
     def __str__(self):
-        result = '%s:%s' % (self.ip, self.port)
+        extra = []
         if self.weight != 500:
-            result += "(%d)" % self.weight
+            extra.append("weight=%d" % self.weight)
+        if self.maxconn:
+            extra.append("maxconn=%d" % self.maxconn)
+
+        result = '%s:%s' % (self.ip, self.port)
+        if extra:
+            result += '(%s)' % ','.join(extra)
         return result
 
     def __repr__(self):
-        return 'Server(%s, %s, %s)' % (repr(self.ip), repr(self.port), repr(self.weight))
+        return 'Server(%s, %s, %s)' % (repr(self.ip), repr(self.port), repr(self.weight), repr(self.maxconn))
 
     def clone(self):
         return copy(self)
@@ -32,6 +39,11 @@ class Server(object):
     def setWeight(self, weight):
         clone = self.clone()
         clone.weight = weight
+        return clone
+
+    def setMaxconn(self, maxconn):
+        clone = self.clone()
+        clone.maxconn = maxconn
         return clone
 
 class Service(object):

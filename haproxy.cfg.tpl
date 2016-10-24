@@ -87,7 +87,7 @@ listen ${service.marathonpath}-${service.portname}
   default-server inter 15s
 % 	for server in service.slots:
 %     if server:
-  server backend-${server.hostname}-${server.port} ${server.ip}:${server.port} weight ${int(float(server.weight) / 1000.0 * 256.0)}${' check' if service.healthcheck else ''}
+  server backend-${server.hostname}-${server.port} ${server.ip}:${server.port} weight ${int(float(server.weight) / 1000.0 * 256.0)}${' maxconn %s' % server.maxconn if server.maxconn else ''}${' check' if service.healthcheck else ''}
 %     endif
 % 	endfor  
 

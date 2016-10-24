@@ -162,6 +162,7 @@ Applications may set Marathon labels to override load balancer settings for each
   "labels": {
     "com.meltwater.proxymatic.0.servicePort": "1234",
     "com.meltwater.proxymatic.0.weight": "100",
+    "com.meltwater.proxymatic.0.maxconn": "200",
     "com.meltwater.proxymatic.0.mode": "http"
   }
 ```
@@ -169,8 +170,9 @@ Applications may set Marathon labels to override load balancer settings for each
 | Label   |  |
 | :----------------- | :---------- |
 | com.meltwater.proxymatic.&lt;N&gt;.servicePort | Override the service port for this exposed container port |
-| com.meltwater.proxymatic.&lt;N&gt;.weight | Specify the load balancer weight for this port in the range `1-1000`. Default value is `500`. |
-| com.meltwater.proxymatic.&lt;N&gt;.mode | Specify the load balancer mode for this port as either `tcp` or `http`. Default is `tcp` mode. |
+| com.meltwater.proxymatic.&lt;N&gt;.weight | Weight for the containers of this app version in the range `1-1000`. Default value is `500`. |
+| com.meltwater.proxymatic.&lt;N&gt;.maxconn | Maximum concurrent connections per container. |
+| com.meltwater.proxymatic.&lt;N&gt;.mode | Load balancer mode for this port as either `tcp` or `http`. Default is `tcp` mode. |
 
 ## Deployment
 

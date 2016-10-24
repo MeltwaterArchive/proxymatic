@@ -1,4 +1,5 @@
 import os
+import random
 import unittest
 from mock import patch
 from proxymatic.discovery.marathon import MarathonDiscovery, getAppVersion
@@ -37,13 +38,14 @@ class MarathonTest(unittest.TestCase):
     def setUp(self):
         # Clear the response cache to avoid interference between tests
         getAppVersion.cache_clear()
+        random.seed(0)
 
     def testMarathonLoadBalancer(self):
         backend = TestBackend()
         MarathonDiscovery(backend, ['http://1.2.3.4:8080/', 'http://1.2.3.5:8080/'], 15)
         self.assertEquals(1, backend.updatedCount)
         self.assertEquals(
-            "marathon:/tmp/marathon.sock/http -> [1.2.3.4:8080, 1.2.3.5:8080]",
+            "marathon:/tmp/marathon.sock/http -> [1.2.3.5:8080, 1.2.3.4:8080]",
             str(backend.services['/tmp/marathon.sock']))
 
     @patch('proxymatic.util.unixrequest', wraps=fileserver(os.path.dirname(__file__) + '/marathon/testRefresh/'))
@@ -71,5 +73,16 @@ class MarathonTest(unittest.TestCase):
         discovery._refresh()
         self.assertEquals(2, backend.updatedCount)
         self.assertEquals(
-            "webapp.demo:1234/http -> [127.0.0.1:31468, 127.0.0.1:31469(100)]",
+            "webapp.demo:1234/http -> [127.0.0.1:31469(weight=100), 127.0.0.1:31468]",
+            str(backend.services['1234/tcp']))
+
+    @patch('proxymatic.util.unixrequest', wraps=fileserver(os.path.dirname(__file__) + '/marathon/testLoadBalancerOptions/'))
+    def testLoadBalancerOptions(self, unixrequest_mock):
+        backend = TestBackend()
+        discovery = MarathonDiscovery(backend, ['http://1.2.3.4:8080/'], 15)
+
+        discovery._refresh()
+        self.assertEquals(2, backend.updatedCount)
+        self.assertEquals(
+            "webapp.demo:1234/http -> [127.0.0.1:31469, 127.0.0.1:31468(weight=100,maxconn=150)]",
             str(backend.services['1234/tcp']))
