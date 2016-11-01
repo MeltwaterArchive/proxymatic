@@ -1,4 +1,5 @@
 import re
+from copy import copy
 from random import randint
 
 class Server(object):
@@ -6,20 +7,44 @@ class Server(object):
         self.ip = ip
         self.port = port
         self.hostname = hostname
+        self.weight = 500
+        self.maxconn = None
 
     def __cmp__(self, other):
         if not isinstance(other, Server):
             return -1
-        return cmp((self.ip, self.port), (other.ip, other.port))
+        return cmp((self.ip, self.port, self.weight, self.maxconn), (other.ip, other.port, other.weight, other.maxconn))
 
     def __hash__(self):
-        return hash((self.ip, self.port))
+        return hash((self.ip, self.port, self.weight, self.maxconn))
 
     def __str__(self):
-        return '%s:%s' % (self.ip, self.port)
+        extra = []
+        if self.weight != 500:
+            extra.append("weight=%d" % self.weight)
+        if self.maxconn:
+            extra.append("maxconn=%d" % self.maxconn)
+
+        result = '%s:%s' % (self.ip, self.port)
+        if extra:
+            result += '(%s)' % ','.join(extra)
+        return result
 
     def __repr__(self):
-        return 'Server(%s, %s)' % (repr(self.ip), repr(self.port))
+        return 'Server(%s, %s, %s)' % (repr(self.ip), repr(self.port), repr(self.weight), repr(self.maxconn))
+
+    def clone(self):
+        return copy(self)
+
+    def setWeight(self, weight):
+        clone = self.clone()
+        clone.weight = weight
+        return clone
+
+    def setMaxconn(self, maxconn):
+        clone = self.clone()
+        clone.maxconn = maxconn
+        return clone
 
 class Service(object):
     def __init__(self, name, source, port, protocol, application='binary', healthcheck=False, healthcheckurl='/'):
@@ -46,10 +71,12 @@ class Service(object):
         return clone
 
     def __str__(self):
-        return '%s:%s/%s -> [%s]' % (self.name, self.port, self.protocol, ', '.join([str(s) for s in self.servers]))
+        return '%s:%s/%s -> [%s]' % (
+            self.name, self.port, self.application if self.application != 'binary' else self.protocol,
+            ', '.join([str(s) for s in sorted(self.servers)]))
 
     def __repr__(self):
-        return 'Service(%s, %s, %s, %s)' % (repr(self.name), repr(self.port), repr(self.protocol), repr(self.servers))
+        return 'Service(%s, %s, %s, %s, %s)' % (repr(self.name), repr(self.port), repr(self.protocol), repr(self.application), repr(sorted(self.servers)))
 
     def __cmp__(self, other):
         if not isinstance(other, Service):
@@ -94,6 +121,11 @@ class Service(object):
     def addServer(self, server):
         clone = self.clone()
         clone._add(server)
+        return clone
+
+    def setApplication(self, application):
+        clone = self.clone()
+        clone.application = application
         return clone
 
     def _add(self, server):

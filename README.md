@@ -15,6 +15,7 @@ The proxymatic image forms one part of a network level service discovery solutio
  * **VHOST_DOMAIN** - Enables nginx with virtual hosts for each service under this domain, e.g. "services.example.com"
  * **VHOST_PORT=80** - Port to serve virtual hosts from. Defaults to port 80.
  * **PROXY_PROTOCOL=false** - Enable proxy protocol on the nginx vhost which is needed when using the AWS ELB in TCP mode for websocket support.
+ * **GROUP_SIZE=1** - Number of Proxymatic instances serving this cluster. Per container connection limits are divided by this number to ensure a globally coordinated maxconn per container.
 
 ## Command Line Usage
 
@@ -34,13 +35,17 @@ Options:
   -i INTERVAL, --refresh-interval=INTERVAL
                         Polling interval in seconds when using non-event
                         capable backends [default: 60]
-  -e, --expose-host     Expose services running in net=host mode. May cause
-                        port collisions when this container is also run in
-                        net=host mode on the same machine [default: False]
+  -e, --expose-host     Expose services running in net=host mode [default:
+                        False]
   --status-endpoint=STATUSENDPOINT
                         Expose /status endpoint and HAproxy stats on this
                         ip:port [default: 0.0.0.0:9090]. Specify an empty
                         string to disable this endpoint
+  --group-size=GROUPSIZE
+                        Number of Proxymatic instances serving this cluster.
+                        Per container connection limits are divided by this
+                        number to ensure a globally coordinated maxconn per
+                        container [default: 1]
   --max-connections=MAXCONNECTIONS
                         Max number of connection per service [default: 8192]
   --pen-servers=PENSERVERS
@@ -153,6 +158,26 @@ container host. Each service will automatically get a vhost under the app.exampl
 | :----------------- | :---------- | :----------------------- |
 | http://myservice.app.example.com | myservice | myservice |
 | http://service.system.product.app.example.com | /product/system/service | service.system.product |
+
+## Application Settings
+
+Applications may set Marathon labels to override load balancer settings for each of their ports, where N = 0..number-of-exposed-ports. For example
+
+```
+  "labels": {
+    "com.meltwater.proxymatic.0.servicePort": "1234",
+    "com.meltwater.proxymatic.0.weight": "100",
+    "com.meltwater.proxymatic.0.maxconn": "200",
+    "com.meltwater.proxymatic.0.mode": "http"
+  }
+```
+
+| Label   |  |
+| :----------------- | :---------- |
+| com.meltwater.proxymatic.&lt;N&gt;.servicePort | Override the service port for this exposed container port |
+| com.meltwater.proxymatic.&lt;N&gt;.weight | Weight for the containers of this app version in the range `1-1000`. Default value is `500`. |
+| com.meltwater.proxymatic.&lt;N&gt;.maxconn | Maximum concurrent connections per container. |
+| com.meltwater.proxymatic.&lt;N&gt;.mode | Load balancer mode for this port as either `tcp` or `http`. Default is `tcp` mode. |
 
 ## Deployment
 

@@ -9,7 +9,7 @@ from proxymatic.services import Server, Service
 from proxymatic import util
 
 @lru_cache(maxsize=1024)
-def _getAppVersion(socketpath, appid, version):
+def getAppVersion(socketpath, appid, version):
     path = '/v2/apps/%s/versions/%s' % (appid.strip('/'), version)
     response = util.unixrequest('GET', socketpath, path, None, {'Accept': 'application/json'})
     return json.loads(response)
@@ -19,11 +19,12 @@ class MarathonService(object):
         self.priority = 100
 
 class MarathonDiscovery(object):
-    def __init__(self, backend, urls, interval):
+    def __init__(self, backend, urls, interval, groupsize=1):
         self._backend = backend
         self._urls = [url.rstrip('/') for url in urls]
         self._socketpath = '/tmp/marathon.sock'
         self._interval = interval
+        self._groupsize = groupsize
         self._healthy = False
         self._marathonService = MarathonService()
         self.priority = 10
@@ -119,6 +120,38 @@ class MarathonDiscovery(object):
         # Signal that we're up and running
         self._healthy = True
 
+    def _applyServicePortOverrides(self, taskConfig, servicePorts):
+        ports = list(servicePorts)
+
+        for portIndex in range(len(ports)):
+            overrideKey = 'com.meltwater.proxymatic.port.%d.servicePort' % portIndex
+            overridePort = util.rget(taskConfig, 'labels', overrideKey)
+            if overridePort is not None:
+                if str(overridePort).isdigit():
+                    ports[portIndex] = int(overridePort)
+                else:
+                    logging.warn("Port override %s for task %s is not numeric ", overrideKey, taskConfig.get('id'))
+
+        return ports
+
+    def _applyBackendAttributeInt(self, attribute, taskConfig, portIndex, server, divisor=1):
+        attribKey = 'com.meltwater.proxymatic.port.%d.%s' % (portIndex, attribute)
+        attribValue = util.rget(taskConfig, 'labels', attribKey)
+        if attribValue is not None:
+            if str(attribValue).isdigit():
+                setattr(server, attribute, int(attribValue) / divisor)
+            else:
+                logging.warn("Weight %s=%s for task %s is not numeric ", attribKey, attribValue, taskConfig.get('id'))
+
+    def _applyLoadBalancerMode(self, taskConfig, portIndex, service):
+        modeKey = 'com.meltwater.proxymatic.port.%d.mode' % portIndex
+        mode = util.rget(taskConfig, 'labels', modeKey)
+        if mode is not None:
+            if mode in ('tcp', 'http'):
+                service.application = mode
+            else:
+                logging.warn("Load balancer connection mode %s=%s for task %s is not in [tcp, http]", modeKey, mode, taskConfig.get('id'))
+
     def _parse(self, content):
         services = {}
 
@@ -140,11 +173,14 @@ class MarathonDiscovery(object):
 
         for task in document.get('tasks', []):
             # Fetch exact config for this app version
-            taskConfig = _getAppVersion(self._socketpath, task.get('appId'), task.get('version'))
+            taskConfig = getAppVersion(self._socketpath, task.get('appId'), task.get('version'))
 
             exposedPorts = task.get('ports', [])
             servicePorts = task.get('servicePorts', [])
             seenServicePorts = set()
+
+            # Apply servicePort overrides
+            servicePorts = self._applyServicePortOverrides(taskConfig, servicePorts)
 
             # Skip tasks that are being killed
             if task.get('state') == 'TASK_KILLING':
@@ -187,11 +223,19 @@ class MarathonDiscovery(object):
                     ipaddr = socket.gethostbyname(task['host'])
                     server = Server(ipaddr, exposedPort, task['host'])
 
+                    # Set backend load balancer options
+                    self._applyBackendAttributeInt('weight', taskConfig, portIndex, server)
+                    self._applyBackendAttributeInt('maxconn', taskConfig, portIndex, server, self._groupsize)
+
                     # Append backend to service
                     if key not in services:
                         name = '.'.join(reversed(filter(bool, task['appId'].split('/'))))
                         services[key] = Service(name, 'marathon:%s' % self._urls, servicePort, protocol)
                     services[key]._add(server)
+
+                    # Set load balancer protocol mode
+                    self._applyLoadBalancerMode(taskConfig, portIndex, services[key])
+
                 except Exception as e:
                     logging.warn("Failed parse service %s backend %s: %s", task.get('appId', ''), task.get('id', ''), str(e))
                     logging.debug(traceback.format_exc())

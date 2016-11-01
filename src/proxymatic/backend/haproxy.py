@@ -3,9 +3,10 @@ import logging
 from proxymatic import util
 
 class HAProxyBackend(object):
-    def __init__(self, maxconnections, statusendpoint):
+    def __init__(self, maxconnections, statusendpoint, pidfile='/run/haproxy.pid'):
         self._maxconnections = maxconnections
         self._statusendpoint = statusendpoint
+        self._pidfile = pidfile
         self._prev = {}
         self._cfgfile = '/etc/haproxy/haproxy.cfg'
         self._render({})
@@ -23,10 +24,9 @@ class HAProxyBackend(object):
 
             # Instruct HAproxy to reload the config
             logging.debug("Reloaded the HAproxy config '%s'", self._cfgfile)
-            command = 'haproxy -f %s -p /run/haproxy.pid' % self._cfgfile
-            pidfile = '/run/haproxy.pid'
-            if os.path.exists(pidfile):
-                command += ' -sf ' + open(pidfile).read()
+            command = 'haproxy -f %s -p %s' % (self._cfgfile, self._pidfile)
+            if os.path.exists(self._pidfile):
+                command += ' -sf ' + open(self._pidfile).read()
             util.shell(command)
 
             # Remember the services that were rendered
