@@ -73,10 +73,10 @@ class Service(object):
     def __str__(self):
         return '%s:%s/%s -> [%s]' % (
             self.name, self.port, self.application if self.application != 'binary' else self.protocol,
-            ', '.join([str(s) for s in self.servers]))
+            ', '.join([str(s) for s in sorted(self.servers)]))
 
     def __repr__(self):
-        return 'Service(%s, %s, %s, %s, %s)' % (repr(self.name), repr(self.port), repr(self.protocol), repr(self.application), repr(self.servers))
+        return 'Service(%s, %s, %s, %s, %s)' % (repr(self.name), repr(self.port), repr(self.protocol), repr(self.application), repr(sorted(self.servers)))
 
     def __cmp__(self, other):
         if not isinstance(other, Service):
