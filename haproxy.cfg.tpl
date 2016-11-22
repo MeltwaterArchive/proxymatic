@@ -53,6 +53,9 @@ defaults
   # Allow requests to be redispatched to other servers on TCP connect errors
   option redispatch
 
+  # Add X-Forwarded-For headers if they're not already added by an upstream load balancer
+  option forwardfor if-none
+
 backend proxymatic
   # Offload proxymatic health check
   mode http
