@@ -40,6 +40,7 @@ def parseint(value):
 def parselist(value):
     return filter(bool, value.split(','))
 
+
 parser.add_option('-m', '--marathon', dest='marathon', help='List of Marathon replicas, e.g. "http://marathon-01:8080/,http://marathon-02:8080/"',
                   default=os.environ.get('MARATHON_URL', ''))
 parser.add_option('-c', '--marathon-callback', dest='callback',
@@ -138,6 +139,8 @@ status.start()
 def sigterm_handler(_signo, _stack_frame):
     global status
     status.terminate()
+
+
 signal.signal(signal.SIGTERM, sigterm_handler)
 
 # Loop forever and allow the threads to work. Setting the threads to daemon=False and returning
