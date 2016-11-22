@@ -7,16 +7,23 @@ class Server(object):
         self.ip = ip
         self.port = port
         self.hostname = hostname
+
+        # Relative weight for this server in the range 0-1000
         self.weight = 500
+
+        # Max connections for this server, default is unlimited
         self.maxconn = None
+
+        # Slow start time in seconds, default is no slow start
+        self.slowstart = None
 
     def __cmp__(self, other):
         if not isinstance(other, Server):
             return -1
-        return cmp((self.ip, self.port, self.weight, self.maxconn), (other.ip, other.port, other.weight, other.maxconn))
+        return cmp((self.ip, self.port, self.weight, self.maxconn, self.slowstart), (other.ip, other.port, other.weight, other.maxconn, self.slowstart))
 
     def __hash__(self):
-        return hash((self.ip, self.port, self.weight, self.maxconn))
+        return hash((self.ip, self.port, self.weight, self.maxconn, self.slowstart))
 
     def __str__(self):
         extra = []
@@ -24,6 +31,8 @@ class Server(object):
             extra.append("weight=%d" % self.weight)
         if self.maxconn:
             extra.append("maxconn=%d" % self.maxconn)
+        if self.slowstart:
+            extra.append("slowstart=%d" % self.slowstart)
 
         result = '%s:%s' % (self.ip, self.port)
         if extra:
@@ -31,7 +40,7 @@ class Server(object):
         return result
 
     def __repr__(self):
-        return 'Server(%s, %s, %s)' % (repr(self.ip), repr(self.port), repr(self.weight), repr(self.maxconn))
+        return 'Server(%s, %s, %s)' % (repr(self.ip), repr(self.port), repr(self.weight), repr(self.maxconn), repr(self.slowstart))
 
     def clone(self):
         return copy(self)
@@ -44,6 +53,11 @@ class Server(object):
     def setMaxconn(self, maxconn):
         clone = self.clone()
         clone.maxconn = maxconn
+        return clone
+
+    def setSlowstart(self, slowstart):
+        clone = self.clone()
+        clone.slowstart = slowstart
         return clone
 
 class Service(object):

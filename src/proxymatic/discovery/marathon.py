@@ -226,6 +226,7 @@ class MarathonDiscovery(object):
                     # Set backend load balancer options
                     self._applyBackendAttributeInt('weight', taskConfig, portIndex, server)
                     self._applyBackendAttributeInt('maxconn', taskConfig, portIndex, server, self._groupsize)
+                    self._applyBackendAttributeInt('slowstart', taskConfig, portIndex, server)
 
                     # Append backend to service
                     if key not in services:

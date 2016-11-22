@@ -84,5 +84,5 @@ class MarathonTest(unittest.TestCase):
         discovery._refresh()
         self.assertEquals(2, backend.updatedCount)
         self.assertEquals(
-            "webapp.demo:1234/http -> [127.0.0.1:31468(weight=100,maxconn=150), 127.0.0.1:31469]",
+            "webapp.demo:1234/http -> [127.0.0.1:31468(weight=100,maxconn=150), 127.0.0.1:31469(slowstart=15)]",
             str(backend.services['1234/tcp']))

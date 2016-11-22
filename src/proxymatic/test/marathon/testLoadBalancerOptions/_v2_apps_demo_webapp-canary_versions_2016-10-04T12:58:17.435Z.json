@@ -30,6 +30,7 @@
   },
   "labels": {
     "com.meltwater.proxymatic.port.0.servicePort": "1234",
+    "com.meltwater.proxymatic.port.0.slowstart": "15",
     "com.meltwater.proxymatic.port.0.mode": "http"
   },
   "ipAddress": null,
