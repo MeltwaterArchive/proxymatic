@@ -9,32 +9,52 @@ global
   #log 127.0.0.1 local1 notice
   
   # Max total number of connections
-  maxconn          ${int(maxconnections*2)}
+  maxconn ${int(maxconnections*2)}
 
-  # Distribute the health checks with a bit of randomness
+  # Distribute the health checks with a bit of randomness (value in percent of check interval)
   spread-checks 5
 
+  # Limit the spread of checks, or services would take too long coming online (value in milliseconds)
+  max-spread-checks 15000
+
 defaults
-  #log            global
-  retries             3
+  log global
   
   # Default per service max number of connections
-  maxconn          ${maxconnections}
+  maxconn ${maxconnections}
 
   # Timeout to establish a connection to the backend server
-  timeout connect  5s
+  timeout connect 3s
 
   # TCP connection timeout if no data is received from client
-  timeout client   300s
+  timeout client 300s
   
   # TCP connection timeout if no data is received from server
-  timeout server   300s
+  timeout server 300s
 
   # Timeout for WebSocket connections
-  timeout tunnel   3600s
+  timeout tunnel 3600s
 
   # Timeout for health check
-  timeout check    5s
+  timeout check 5s
+
+  # Timeout for requests waiting in a backend queue for a connection slot to open up
+  timeout queue 30s
+
+  # Timeout for receiving the full headers on a HTTP request
+  timeout http-request 15s
+
+  # Connection timeout waiting for a new request after a response has been sent
+  timeout http-keep-alive 1s
+
+  # Number of times to retry on TCP connect errors
+  retries 3
+
+  # Allow requests to be redispatched to other servers on TCP connect errors
+  option redispatch
+
+  # Add X-Forwarded-For headers if they're not already added by an upstream load balancer
+  option forwardfor if-none
 
 backend proxymatic
   # Offload proxymatic health check
