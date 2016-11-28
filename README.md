@@ -123,22 +123,23 @@ There are a number of things that need to be in place for the orchestration of g
 
 * Trap SIGTERM in your app and start failing the health check with e.g. *HTTP 503 Service Unavailable*. The  implementation of this will vary greatly between apps and languages. This example uses [Python Flask](http://flask.pocoo.org/)
 
-```
+```python
 import signal
 from flask import Flask
 
 app = Flask(__name__)
-healty = True
+healthy = True
 
 # Start failing the health check when receiving SIGTERM
 def sigterm_handler(_signo, _stack_frame):
-  global healty
-  healty = False
+  global healthy
+  healthy = False
+
 signal.signal(signal.SIGTERM, sigterm_handler)
 
 @app.route('/health')
 def health():
-  if healty:
+  if healthy:
     return 'OK'
   return 'Stopping', 503
 ```
@@ -151,10 +152,10 @@ The --vhost-domain and $VHOST_DOMAIN parameter can be used to automatically conf
 docker run -p 80:80 -e VHOST_DOMAIN=app.example.com
 ```
 
-And create a wildcard DNS record that points *.app.example.com to the IP of the 
+And create a wildcard DNS record that points `*.app.example.com` to the IP of the 
 container host. Each service will automatically get a vhost under the app.example.com setup in nginx. For example
 
-| Virtual Host URL   | Marathon Id | Registrator SERVICE_NAME |
+| Virtual Host URL   | Marathon Id | Registrator `SERVICE_NAME` |
 | :----------------- | :---------- | :----------------------- |
 | http://myservice.app.example.com | myservice | myservice |
 | http://service.system.product.app.example.com | /product/system/service | service.system.product |
@@ -172,12 +173,12 @@ Applications may set Marathon labels to override load balancer settings for each
   }
 ```
 
-| Label   |  |
-| :----------------- | :---------- |
-| com.meltwater.proxymatic.&lt;N&gt;.servicePort | Override the service port for this exposed container port |
-| com.meltwater.proxymatic.&lt;N&gt;.weight | Weight for the containers of this app version in the range `1-1000`. Default value is `500`. |
-| com.meltwater.proxymatic.&lt;N&gt;.maxconn | Maximum concurrent connections per container. |
-| com.meltwater.proxymatic.&lt;N&gt;.mode | Load balancer mode for this port as either `tcp` or `http`. Default is `tcp` mode. |
+| Label                                          |                                                                                              |
+| :--------------------------------------------- | :------------------------------------------------------------------------------------------- |
+| com.meltwater.proxymatic.&lt;N&gt;.servicePort | Override the service port for this exposed container port                                    |
+| com.meltwater.proxymatic.&lt;N&gt;.weight      | Weight for the containers of this app version in the range `1-1000`. Default value is `500`. |
+| com.meltwater.proxymatic.&lt;N&gt;.maxconn     | Maximum concurrent connections per container.                                                |
+| com.meltwater.proxymatic.&lt;N&gt;.mode        | Load balancer mode for this port as either `tcp` or `http`. Default is `tcp` mode.           |
 
 ## Deployment
 
@@ -235,7 +236,7 @@ Global=true
 
 Using the [garethr-docker](https://github.com/garethr/garethr-docker) module
 
-```
+```yaml
 classes:
   - docker::run_instance
 
