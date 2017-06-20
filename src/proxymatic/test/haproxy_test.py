@@ -47,6 +47,27 @@ listen demo.example-1234
 """
         self._check(services, expected, pid=567)
 
+    def testTimeout(self):
+        """
+        Verifies that client and server timeouts can be overridden
+        """
+        services = {
+            '1234/tcp': Service('example.demo', self, 1234, 'tcp', timeoutclient='500s', timeoutserver='500s').
+            addServer(Server('1.2.3.4', 31001, 'worker1'))
+        }
+
+        expected = """# example.demo (testTimeout (proxymatic.test.haproxy_test.HAproxyTest))
+listen demo.example-1234
+  bind 0.0.0.0:1234
+  balance leastconn
+  mode tcp
+  timeout client 500s
+  timeout server 500s
+  default-server inter 15s
+  server backend-worker1-31001 1.2.3.4:31001 weight 128
+"""
+        self._check(services, expected)
+
     def testWeight(self):
         """
         Verifies that backend weights are processed correctly

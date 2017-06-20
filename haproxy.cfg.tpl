@@ -107,7 +107,7 @@ listen ${service.marathonpath}-${service.portname}
 % if service.timeoutclient:
   timeout client ${service.timeoutclient}
 % endif
-% if service.timeout:
+% if service.timeoutserver:
   timeout server ${service.timeoutserver}
 % endif
   default-server inter 15s

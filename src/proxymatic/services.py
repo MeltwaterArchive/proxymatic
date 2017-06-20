@@ -47,7 +47,7 @@ class Server(object):
         return clone
 
 class Service(object):
-    def __init__(self, name, source, port, protocol, application='binary', healthcheck=False, healthcheckurl='/', timeoutclient=False, timeoutserver=False):
+    def __init__(self, name, source, port, protocol, application='binary', healthcheck=False, healthcheckurl='/', timeoutclient=None, timeoutserver=None):
         self.name = name
         self.source = source
         self.port = port
@@ -67,7 +67,8 @@ class Service(object):
             self.port = int(match.group(1))
 
     def clone(self):
-        clone = Service(self.name, self.source, self.port, self.protocol, self.application, self.healthcheck, self.healthcheckurl, self.timeoutclient, self.timeoutserver)
+        clone = Service(self.name, self.source, self.port, self.protocol, self.application, self.healthcheck, self.healthcheckurl, self.timeoutclient,
+                        self.timeoutserver)
         clone.servers = set(self.servers)
         clone.slots = list(self.slots)
         return clone
