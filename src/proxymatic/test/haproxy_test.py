@@ -52,7 +52,7 @@ listen demo.example-1234
         Verifies that client and server timeouts can be overridden
         """
         services = {
-            '1234/tcp': Service('example.demo', self, 1234, 'tcp', timeoutclient='500s', timeoutserver='500s').
+            '1234/tcp': Service('example.demo', self, 1234, 'tcp', timeoutclient='500', timeoutserver='500').
             addServer(Server('1.2.3.4', 31001, 'worker1'))
         }
 

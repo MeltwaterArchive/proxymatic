@@ -143,6 +143,15 @@ class MarathonDiscovery(object):
             else:
                 logging.warn("Weight %s=%s for task %s is not numeric ", attribKey, attribValue, taskConfig.get('id'))
 
+    def _applyBackendConnectionTimeout(self, attribute, taskConfig, portIndex, server):
+        attribKey = 'com.meltwater.proxymatic.service.%s' % (attribute)
+        attribValue = util.rget(taskConfig, 'labels', attribKey)
+        if attribValue is not None:
+            if str(attribValue).isdigit():
+                setattr(server, attribute, int(attribValue))
+            else:
+                logging.warn("Timeout %s=%s for task %s is not numeric ", attribKey, attribValue, taskConfig.get('id'))
+
     def _applyLoadBalancerMode(self, taskConfig, portIndex, service):
         modeKey = 'com.meltwater.proxymatic.port.%d.mode' % portIndex
         mode = util.rget(taskConfig, 'labels', modeKey)
@@ -226,6 +235,8 @@ class MarathonDiscovery(object):
                     # Set backend load balancer options
                     self._applyBackendAttributeInt('weight', taskConfig, portIndex, server)
                     self._applyBackendAttributeInt('maxconn', taskConfig, portIndex, server, self._groupsize)
+                    self._applyBackendConnectionTimeout('timeoutclient', taskConfig, portIndex, server)
+                    self._applyBackendConnectionTimeout('timeoutserver', taskConfig, portIndex, server)
 
                     # Append backend to service
                     if key not in services:

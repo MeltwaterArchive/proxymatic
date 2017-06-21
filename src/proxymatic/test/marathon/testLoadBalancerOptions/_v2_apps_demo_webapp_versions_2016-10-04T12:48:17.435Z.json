@@ -31,7 +31,9 @@
   "labels": {
     "com.meltwater.proxymatic.port.0.weight": "100",
     "com.meltwater.proxymatic.port.0.maxconn": "150",
-    "com.meltwater.proxymatic.port.0.mode": "http"
+    "com.meltwater.proxymatic.port.0.mode": "http",
+    "com.meltwater.proxymatic.service.timeoutclient": 500,
+    "com.meltwater.proxymatic.service.timeoutserver": 500
   },
   "ipAddress": null,
   "version": "2016-10-04T12:48:17.435Z"

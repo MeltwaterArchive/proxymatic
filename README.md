@@ -180,6 +180,21 @@ Applications may set Marathon labels to override load balancer settings for each
 | com.meltwater.proxymatic.&lt;N&gt;.maxconn     | Maximum concurrent connections per container.                                                |
 | com.meltwater.proxymatic.&lt;N&gt;.mode        | Load balancer mode for this port as either `tcp` or `http`. Default is `tcp` mode.           |
 
+Or set Marathon labels to override load balancer settings for the service client or server timeouts. For example
+
+```
+  "labels": {
+    "com.meltwater.proxymatic.service.timeoutclient": 300,
+    "com.meltwater.proxymatic.service.timeoutserver": 300
+  }
+```
+
+| Label                                          |                                                                                              |
+| :--------------------------------------------- | :------------------------------------------------------------------------------------------- |
+| com.meltwater.proxymatic.service.timeoutclient | Override the service client timeout (value in seconds)                                       |
+| com.meltwater.proxymatic.service.timeoutserver | Override the service server timeout (value in seconds)                                       |
+
+
 ## Deployment
 
 ### Graceful Shutdown
