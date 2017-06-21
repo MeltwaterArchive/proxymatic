@@ -166,33 +166,23 @@ Applications may set Marathon labels to override load balancer settings for each
 
 ```
   "labels": {
-    "com.meltwater.proxymatic.0.servicePort": "1234",
-    "com.meltwater.proxymatic.0.weight": "100",
-    "com.meltwater.proxymatic.0.maxconn": "200",
-    "com.meltwater.proxymatic.0.mode": "http"
+    "com.meltwater.proxymatic.port.0.servicePort": "1234",
+    "com.meltwater.proxymatic.port.0.weight": "100",
+    "com.meltwater.proxymatic.port.0.maxconn": "200",
+    "com.meltwater.proxymatic.port.0.mode": "http",
+    "com.meltwater.proxymatic.port.0.timeout.client": 100,
+    "com.meltwater.proxymatic.port.0.timeout.server": 200
   }
 ```
 
-| Label                                          |                                                                                              |
-| :--------------------------------------------- | :------------------------------------------------------------------------------------------- |
-| com.meltwater.proxymatic.&lt;N&gt;.servicePort | Override the service port for this exposed container port                                    |
-| com.meltwater.proxymatic.&lt;N&gt;.weight      | Weight for the containers of this app version in the range `1-1000`. Default value is `500`. |
-| com.meltwater.proxymatic.&lt;N&gt;.maxconn     | Maximum concurrent connections per container.                                                |
-| com.meltwater.proxymatic.&lt;N&gt;.mode        | Load balancer mode for this port as either `tcp` or `http`. Default is `tcp` mode.           |
-
-Or set Marathon labels to override load balancer settings for the service client or server timeouts. For example
-
-```
-  "labels": {
-    "com.meltwater.proxymatic.service.timeoutclient": 300,
-    "com.meltwater.proxymatic.service.timeoutserver": 300
-  }
-```
-
-| Label                                          |                                                                                              |
-| :--------------------------------------------- | :------------------------------------------------------------------------------------------- |
-| com.meltwater.proxymatic.service.timeoutclient | Override the service client timeout (value in seconds)                                       |
-| com.meltwater.proxymatic.service.timeoutserver | Override the service server timeout (value in seconds)                                       |
+| Label                                                  |                                                                                              |
+| :----------------------------------------------------- | :------------------------------------------------------------------------------------------- |
+| com.meltwater.proxymatic.port.&lt;N&gt;.servicePort    | Override the service port for this exposed container port                                    |
+| com.meltwater.proxymatic.port.&lt;N&gt;.weight         | Weight for the containers of this app version in the range `1-1000`. Default value is `500`. |
+| com.meltwater.proxymatic.port.&lt;N&gt;.maxconn        | Maximum concurrent connections per container.                                                |
+| com.meltwater.proxymatic.port.&lt;N&gt;.mode           | Load balancer mode for this port as either `tcp` or `http`. Default is `tcp` mode.           |
+| com.meltwater.proxymatic.port.&lt;N&gt;.timeout.client | Override the service client timeout (value in seconds)                                       |
+| com.meltwater.proxymatic.port.&lt;N&gt;.timeout.server | Override the service server timeout (value in seconds)                                       |
 
 
 ## Deployment
