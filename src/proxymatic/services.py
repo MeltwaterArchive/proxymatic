@@ -112,6 +112,8 @@ class Service(object):
         clone.source = other.source
         clone.port = other.port
         clone.protocol = other.protocol
+        clone.timeoutclient = other.timeoutclient
+        clone.timeoutserver = other.timeoutserver
 
         for server in clone.servers - other.servers:
             clone._remove(server)
