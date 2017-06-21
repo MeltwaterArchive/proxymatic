@@ -31,7 +31,7 @@ class Server(object):
         return result
 
     def __repr__(self):
-        return 'Server(%s, %s, %s)' % (repr(self.ip), repr(self.port), repr(self.weight), repr(self.maxconn))
+        return 'Server(%s, %s, %s, %s)' % (repr(self.ip), repr(self.port), repr(self.weight), repr(self.maxconn))
 
     def clone(self):
         return copy(self)
@@ -74,8 +74,18 @@ class Service(object):
         return clone
 
     def __str__(self):
-        return '%s:%s/%s -> [%s]' % (
+        # Represent misc. service attributes as k=v pairs, but only if their value is not None
+        service_attributes = ['timeoutclient', 'timeoutserver']
+        service_options = ['%s=%s' % (attr, getattr(self, attr)) for attr in service_attributes if getattr(self, attr) is not None]
+
+        # Only use healthcheckurl if healtcheck has a meaningful value
+        if self.healthcheck:
+            service_options.append('healtcheck=%s' % self.healthcheck)
+            service_options.append('healthcheckurl=%s' % self.healthcheckurl)
+
+        return '%s:%s/%s%s -> [%s]' % (
             self.name, self.port, self.application if self.application != 'binary' else self.protocol,
+            '(%s)' % ','.join(service_options) if service_options else '',
             ', '.join([str(s) for s in sorted(self.servers)]))
 
     def __repr__(self):
