@@ -52,7 +52,7 @@ listen demo.example-1234
         Verifies that client and server timeouts can be overridden
         """
         services = {
-            '1234/tcp': Service('example.demo', self, 1234, 'tcp', timeoutclient='500', timeoutserver='500').
+            '1234/tcp': Service('example.demo', self, 1234, 'tcp', timeoutclient='300', timeoutserver='500').
             addServer(Server('1.2.3.4', 31001, 'worker1'))
         }
 
@@ -61,7 +61,7 @@ listen demo.example-1234
   bind 0.0.0.0:1234
   balance leastconn
   mode tcp
-  timeout client 500s
+  timeout client 300s
   timeout server 500s
   default-server inter 15s
   server backend-worker1-31001 1.2.3.4:31001 weight 128
