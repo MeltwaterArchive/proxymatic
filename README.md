@@ -70,7 +70,7 @@ Options:
 Given a Marathon URL, proxymatic will fetch the running tasks and configure proxies that forward connections from the [servicePort](http://mesosphere.com/docs/getting-started/service-discovery/) to the host and port exposed by the task. Proxymatic subscribes to the [Marathon event bus](https://mesosphere.github.io/marathon/docs/event-bus.html) 
 and receive cluster changes immediately when they occur, which cuts the response time in case of failover or scaling.
 
-```
+```bash
 docker run --net=host \
   -e MARATHON_URL=http://marathon-host:8080 \
   meltwater/proxymatic:latest
@@ -78,7 +78,7 @@ docker run --net=host \
 
 Given the service below, proxymatic will listen on port 1234 and forward connections to port 8080 inside the container. 
 
-```
+```json
 {
   "id": "/myproduct/mysubsystem/myservice",
   "container": {
@@ -107,7 +107,7 @@ There are a number of things that need to be in place for the orchestration of g
 
 * Add an Marathon app health check that is fast enough to run within the stop timeout, and with plenty room to finish requests. For example
 
-```
+```json
   "healthChecks": [
     {
       "protocol": "HTTP",
@@ -148,7 +148,7 @@ def health():
 
 The --vhost-domain and $VHOST_DOMAIN parameter can be used to automatically configure an nginx with virtual hosts for each service. This is similar to the [Deis router](http://docs.deis.io/en/latest/understanding_deis/components/#router) component. To use this feature start proxymatic like
 
-```
+```bash
 docker run -p 80:80 -e VHOST_DOMAIN=app.example.com
 ```
 
@@ -164,7 +164,7 @@ container host. Each service will automatically get a vhost under the app.exampl
 
 Applications may set Marathon labels to override load balancer settings for each of their ports, where N = 0..number-of-exposed-ports. For example
 
-```
+```json
   "labels": {
     "com.meltwater.proxymatic.port.0.servicePort": "1234",
     "com.meltwater.proxymatic.port.0.weight": "100",
