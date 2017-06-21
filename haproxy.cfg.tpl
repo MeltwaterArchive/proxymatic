@@ -104,6 +104,12 @@ listen ${service.marathonpath}-${service.portname}
 % if service.healthcheck and service.application == 'http':
   option httpchk GET ${service.healthcheckurl}
 % endif
+% if service.timeoutclient:
+  timeout client ${service.timeoutclient}s
+% endif
+% if service.timeoutserver:
+  timeout server ${service.timeoutserver}s
+% endif
   default-server inter 15s
 % 	for server in service.slots:
 %     if server:

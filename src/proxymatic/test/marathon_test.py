@@ -45,7 +45,7 @@ class MarathonTest(unittest.TestCase):
         MarathonDiscovery(backend, ['http://1.2.3.4:8080/', 'http://1.2.3.5:8080/'], 15)
         self.assertEquals(1, backend.updatedCount)
         self.assertEquals(
-            "marathon:/tmp/marathon.sock/http -> [1.2.3.4:8080, 1.2.3.5:8080]",
+            "marathon:/tmp/marathon.sock/http(healtcheck=True,healthcheckurl=/ping) -> [1.2.3.4:8080, 1.2.3.5:8080]",
             str(backend.services['/tmp/marathon.sock']))
 
     @patch('proxymatic.util.unixrequest', wraps=fileserver(os.path.dirname(__file__) + '/marathon/testRefresh/'))
@@ -84,5 +84,5 @@ class MarathonTest(unittest.TestCase):
         discovery._refresh()
         self.assertEquals(2, backend.updatedCount)
         self.assertEquals(
-            "webapp.demo:1234/http -> [127.0.0.1:31468(weight=100,maxconn=150), 127.0.0.1:31469]",
+            "webapp.demo:1234/http(timeoutclient=100,timeoutserver=200) -> [127.0.0.1:31468(weight=100,maxconn=150), 127.0.0.1:31469]",
             str(backend.services['1234/tcp']))
