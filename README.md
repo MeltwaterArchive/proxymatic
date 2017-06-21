@@ -181,8 +181,8 @@ Applications may set Marathon labels to override load balancer settings for each
 | com.meltwater.proxymatic.port.&lt;N&gt;.weight         | Weight for the containers of this app version in the range `1-1000`. Default value is `500`. |
 | com.meltwater.proxymatic.port.&lt;N&gt;.maxconn        | Maximum concurrent connections per container.                                                |
 | com.meltwater.proxymatic.port.&lt;N&gt;.mode           | Load balancer mode for this port as either `tcp` or `http`. Default is `tcp` mode.           |
-| com.meltwater.proxymatic.port.&lt;N&gt;.timeout.client | Override the service client timeout (value in seconds)                                       |
-| com.meltwater.proxymatic.port.&lt;N&gt;.timeout.server | Override the service server timeout (value in seconds)                                       |
+| com.meltwater.proxymatic.port.&lt;N&gt;.timeout.client | Maximum inactivity time on the client side (value in seconds)                                       |
+| com.meltwater.proxymatic.port.&lt;N&gt;.timeout.server | Maximum inactivity time on the server/container side (value in seconds)                                       |
 
 
 ## Deployment
