@@ -227,6 +227,10 @@ class MarathonDiscovery(object):
                     self._applyBackendAttributeInt('weight', taskConfig, portIndex, server)
                     self._applyBackendAttributeInt('maxconn', taskConfig, portIndex, server, self._groupsize)
                     self._applyBackendAttributeInt('slowstart', taskConfig, portIndex, server)
+                    # Haproxy requires both slowstart and healthcheck to work
+                    if server.slowstart and not healthChecks:
+                        logging.warn("Failed to add slowstart for service %s backend %s: %s, healthcheck is required for slowstart", task.get('appId', ''), task.get('id', ''), str(e))
+                        server.slowstart = None
 
                     # Append backend to service
                     if key not in services:
