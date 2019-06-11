@@ -1,3 +1,7 @@
+# DEPRECATED
+This repository is no longer activiely maintained.
+
+---
 # Proxymatic
 [![Travis CI](https://img.shields.io/travis/meltwater/proxymatic/master.svg)](https://travis-ci.org/meltwater/proxymatic)
 [![Coverage Status](https://codecov.io/github/meltwater/proxymatic/coverage.svg?branch=master)](https://codecov.io/github/meltwater/proxymatic?branch=master&view=all)
